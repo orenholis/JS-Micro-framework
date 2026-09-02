@@ -1,0 +1,11 @@
+{
+  "name": "constrained-ui-framework-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "node tools/server.mjs",
+    "test": "node tests/node-smoke.mjs",
+    "size": "node tools/size.mjs"
+  }
+}

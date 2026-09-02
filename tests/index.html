@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Framework – testy</title>
+    <style>
+      body { max-width: 860px; margin: 40px auto; padding: 0 20px; color: #17201c; font: 16px/1.5 system-ui, sans-serif; }
+      h1 { letter-spacing: -.03em; }
+      #summary { padding: 14px 18px; border-radius: 12px; font-weight: 750; background: #eef2ef; }
+      .pass { color: #14633d; }
+      .fail { color: #a22e22; }
+      li { margin: 8px 0; }
+      #sandbox { position: fixed; left: -10000px; top: 0; }
+    </style>
+  </head>
+  <body>
+    <h1>Testy frameworku</h1>
+    <p id="summary">Testy probíhají…</p>
+    <ol id="results"></ol>
+    <div id="sandbox"></div>
+    <script type="module" src="./tests.js"></script>
+  </body>
+</html>
