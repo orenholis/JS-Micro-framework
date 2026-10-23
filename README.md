@@ -51,6 +51,7 @@ Builder elementu podporuje:
 - `.prop(name, value)` pro DOM vlastnosti, například `disabled` nebo `value`;
 - `.style(name, value)` pro statické i reaktivní styly;
 - `.on(type, handler, options)` pro události svázané s životním cyklem;
+- `.use(extension, ...arguments)` pro vlastní znovupoužitelnou operaci řetězce;
 - `.ref(name)` pro uložení skutečného uzlu do `this.refs`;
 - `.text(value)`, `.child(value)` a `.children(...values)` pro obsah.
 
@@ -59,7 +60,20 @@ statická nebo vytvořená pomocí `value(signal, transformace)`. `show(...)`
 spravuje podmíněný podstrom a `each(...)` seznam se stabilními klíči.
 
 Pro neobvyklé HTML elementy lze místo pojmenované funkce použít
-`tag('custom-element')`. Původní objektový popis a nízkoúrovňové funkce zůstaly
+`tag('custom-element', ...children)`. Opakované nastavení lze zapouzdřit do
+vlastní funkce a připojit pomocí `.use()`:
+
+```js
+const tooltip = (element, text) => {
+  element.class('has-tooltip').attr('title', text);
+};
+
+tag('status-panel', 'Připraveno')
+  .use(tooltip, 'Aktuální stav aplikace')
+  .data('state', 'ready');
+```
+
+Původní objektový popis a nízkoúrovňové funkce zůstaly
 dostupné pro kompatibilitu a nestandardní použití.
 
 ## Princip vykreslování
@@ -98,7 +112,7 @@ npm run verify
 - `dist/constrained-ui.min.js` a sdílený chunk – minifikované jádro;
 - `dist/svg.min.js` – volitelný SVG modul.
 
-Aktuální V0 má 9 680 B minifikovaného jádra (3 735 B gzip, 3 338 B brotli).
+Aktuální V0 má 9 790 B minifikovaného jádra (3 750 B gzip, 3 361 B brotli).
 Volitelný SVG vstup přidává 443 B před kompresí. Hodnoty reprodukuje
 `npm run size`.
 

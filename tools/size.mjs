@@ -1,7 +1,15 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { gzipSync, brotliCompressSync } from 'node:zlib';
 
-const coreFiles = ['state.js', 'dom.js', 'core.js', 'collections.js', 'template.js', 'index.js'];
+const coreFiles = [
+  'state.js',
+  'dom.js',
+  'core.js',
+  'collections.js',
+  'html.js',
+  'template.js',
+  'index.js',
+];
 const optionalFiles = ['svg.js'];
 
 function report(label, files) {

@@ -136,6 +136,7 @@ const {
   list,
   mount,
   state,
+  tag,
   value,
   when,
 } = await import('../src/index.js');
@@ -298,6 +299,26 @@ test('volitelný SVG modul vytváří elementy ve správném jmenném prostoru',
   assert(icon.root.childNodes[0].namespaceURI === SVG_NAMESPACE, 'SVG potomek nemá SVG namespace.');
   assert(icon.root.childNodes[0].attributes.get('r') === '6', 'SVG atribut nebyl nastaven.');
   icon.destroy();
+});
+
+test('vlastní element a rozšíření řetězce nevyžadují změnu jádra', () => {
+  const labelled = (builder, label) => {
+    builder.class('labelled').aria('label', label);
+  };
+
+  class CustomElement extends ViewComponent {
+    template() {
+      return tag('status-panel', 'Připraveno')
+        .use(labelled, 'Stav aplikace')
+        .data('state', 'ready');
+    }
+  }
+
+  const component = mount(new CustomElement(), element('div'));
+  assert(component.root.nodeName === 'STATUS-PANEL', 'Vlastní název elementu nebyl použit.');
+  assert(component.root.className === 'labelled', 'Rozšíření nenastavilo CSS třídu.');
+  assert(component.root.attributes.get('aria-label') === 'Stav aplikace', 'Rozšíření nenastavilo atribut.');
+  component.destroy();
 });
 
 test('keyed seznam zachová identitu a pořadí', () => {

@@ -63,6 +63,15 @@ export class ElementBuilder {
     return this;
   }
 
+  use(extension, ...arguments_) {
+    if (typeof extension !== 'function') {
+      throw new TypeError('Invalid builder extension');
+    }
+
+    extension(this, ...arguments_);
+    return this;
+  }
+
   ref(reference) {
     this.properties.ref = reference;
     return this;

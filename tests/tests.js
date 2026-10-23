@@ -9,6 +9,7 @@ import {
   list,
   mount,
   state,
+  tag,
   value,
   when,
 } from '../src/index.js';
@@ -167,6 +168,26 @@ test('Volitelný SVG modul vytvoří a aktualizuje SVG element', () => {
   assert(circleNode.getAttribute('r') === '6', 'SVG atribut se neaktualizoval.');
   icon.destroy();
   assert(icon.radius.subscriberCount === 0, 'SVG vazba nebyla uvolněna.');
+});
+
+test('Vlastní element a rozšíření řetězce fungují bez změny jádra', () => {
+  const labelled = (builder, label) => {
+    builder.class('labelled').aria('label', label);
+  };
+
+  class CustomElement extends ViewComponent {
+    template() {
+      return tag('status-panel', 'Připraveno')
+        .use(labelled, 'Stav aplikace')
+        .data('state', 'ready');
+    }
+  }
+
+  const component = mount(new CustomElement(), sandbox);
+  assert(component.root.localName === 'status-panel', 'Vlastní název elementu nebyl použit.');
+  assert(component.root.classList.contains('labelled'), 'Rozšíření nenastavilo CSS třídu.');
+  assert(component.root.getAttribute('aria-label') === 'Stav aplikace', 'Rozšíření nenastavilo atribut.');
+  component.destroy();
 });
 
 test('Událost se po destrukci komponenty již neprovede', () => {
