@@ -91,7 +91,7 @@ function createBindingWriter(node, target) {
       };
 
     default:
-      throw new TypeError(`Unknown binding target: ${target}`);
+      throw new TypeError(`Invalid binding: ${target}`);
   }
 }
 

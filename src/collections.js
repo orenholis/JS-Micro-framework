@@ -11,7 +11,7 @@ function mountRenderable(renderable, parent, before) {
   }
 
   if (!(renderable instanceof Node)) {
-    throw new TypeError('A conditional or list factory must return a Node or Component.');
+    throw new TypeError('Invalid dynamic view');
   }
 
   const nodes = renderable instanceof DocumentFragment

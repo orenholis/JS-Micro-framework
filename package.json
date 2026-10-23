@@ -4,8 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "node tools/build.mjs",
     "serve": "node tools/server.mjs",
     "test": "node tests/node-smoke.mjs",
-    "size": "node tools/size.mjs"
+    "size": "npm run build --silent && node tools/size.mjs",
+    "verify": "npm test && npm run size"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }

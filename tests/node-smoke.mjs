@@ -100,8 +100,10 @@ class TestDocument extends TestNode {
     return new TestNode(name.toUpperCase());
   }
 
-  createElementNS(_namespace, name) {
-    return this.createElement(name);
+  createElementNS(namespace, name) {
+    const node = this.createElement(name);
+    node.namespaceURI = namespace;
+    return node;
   }
 
   createTextNode(value) {
@@ -127,7 +129,9 @@ const {
   Component,
   Scope,
   ViewComponent,
+  button,
   computed,
+  div,
   element,
   list,
   mount,
@@ -135,6 +139,8 @@ const {
   value,
   when,
 } = await import('../src/index.js');
+
+const { circle, svg, SVG_NAMESPACE } = await import('../src/svg.js');
 
 let passed = 0;
 
@@ -238,6 +244,60 @@ test('deklarativní strom vytvoří children, refs, události a reaktivní vazby
   assert(card.root.className === 'card is-active', 'Reaktivní CSS třída se neaktualizovala.');
   card.destroy();
   assert(card.title.subscriberCount === 0 && card.active.subscriberCount === 0, 'Strom neuvolnil reaktivní odběry.');
+});
+
+test('fluent API vytváří vnořený DOM a řetězí statické i reaktivní nastavení', () => {
+  class FluentCounter extends ViewComponent {
+    constructor() {
+      super();
+      this.count = this.signal(0);
+      this.color = this.signal('red');
+    }
+
+    template() {
+      return div(
+        button('Počet: ', value(this.count))
+          .class('counter')
+          .class('is-positive', value(this.count, (count) => count > 0))
+          .prop('type', 'button')
+          .aria('label', 'Zvýšit počet')
+          .data('testid', 'counter')
+          .style('color', value(this.color))
+          .ref('button')
+          .on('click', () => this.count.update((count) => count + 1)),
+      ).class('wrapper').ref('root');
+    }
+  }
+
+  const counter = mount(new FluentCounter(), element('div'));
+  const buttonNode = counter.refs.button;
+  assert(counter.root === counter.refs.root, 'Reference kořene nebyla uložena.');
+  assert(counter.root.className === 'wrapper', 'Statická třída nebyla nastavena.');
+  assert(buttonNode.attributes.get('aria-label') === 'Zvýšit počet', 'ARIA atribut nebyl nastaven.');
+  assert(buttonNode.attributes.get('data-testid') === 'counter', 'Datový atribut nebyl nastaven.');
+  assert(buttonNode.type === 'button', 'DOM vlastnost nebyla nastavena.');
+  buttonNode.click();
+  counter.color.value = 'blue';
+  assert(buttonNode.textContent === 'Počet: 1', 'Reaktivní text se neaktualizoval.');
+  assert(buttonNode.className === 'counter is-positive', 'Reaktivní třída se neaktualizovala.');
+  assert(buttonNode.style.color === 'blue', 'Reaktivní styl se neaktualizoval.');
+  counter.destroy();
+  assert(counter.count.subscriberCount === 0 && counter.color.subscriberCount === 0, 'Fluent vazby nebyly uvolněny.');
+});
+
+test('volitelný SVG modul vytváří elementy ve správném jmenném prostoru', () => {
+  class Icon extends ViewComponent {
+    template() {
+      return svg(circle().attr('cx', 8).attr('cy', 8).attr('r', 6))
+        .attr('viewBox', '0 0 16 16');
+    }
+  }
+
+  const icon = mount(new Icon(), element('div'));
+  assert(icon.root.namespaceURI === SVG_NAMESPACE, 'SVG kořen nemá SVG namespace.');
+  assert(icon.root.childNodes[0].namespaceURI === SVG_NAMESPACE, 'SVG potomek nemá SVG namespace.');
+  assert(icon.root.childNodes[0].attributes.get('r') === '6', 'SVG atribut nebyl nastaven.');
+  icon.destroy();
 });
 
 test('keyed seznam zachová identitu a pořadí', () => {

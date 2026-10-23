@@ -1,5 +1,6 @@
 import { Component } from './core.js';
 import { list, when } from './collections.js';
+import { isElementBuilder, readEventBinding } from './html.js';
 import { isSignal } from './state.js';
 
 const VALUE = Symbol('value');
@@ -12,29 +13,18 @@ const BINDING_PREFIXES = {
   style: 'style',
 };
 
-const BINDING_GROUPS = {
-  attributes: 'attribute',
-  style: 'style',
-};
-
-const PRESET_KEYS = ['class', 'style', 'attributes'];
-
 const RESERVED_KEYS = new Set([
   'tag',
-  'nodeName',
   'namespace',
   'children',
   'skip',
-  'class',
-  'style',
-  'attributes',
 ]);
 
 const identity = (value) => value;
 
 export function value(source, map = identity) {
   if (!isSignal(source)) {
-    throw new TypeError('value() expects a Signal.');
+    throw new TypeError('value: Signal required');
   }
 
   return { [VALUE]: true, source, map };
@@ -42,11 +32,11 @@ export function value(source, map = identity) {
 
 export function each(source, { key, render }) {
   if (!isSignal(source)) {
-    throw new TypeError('each() expects a Signal.');
+    throw new TypeError('each: Signal required');
   }
 
   if (typeof key !== 'function' || typeof render !== 'function') {
-    throw new TypeError('each() expects key and render functions.');
+    throw new TypeError('each: key and render required');
   }
 
   return { [EACH]: true, source, key, render };
@@ -54,11 +44,11 @@ export function each(source, { key, render }) {
 
 export function show(source, render) {
   if (!isSignal(source)) {
-    throw new TypeError('show() expects a Signal.');
+    throw new TypeError('show: Signal required');
   }
 
   if (typeof render !== 'function') {
-    throw new TypeError('show() expects a render function.');
+    throw new TypeError('show: render required');
   }
 
   return { [SHOW]: true, source, render };
@@ -89,7 +79,7 @@ function applyReference(owner, reference, node) {
   }
 
   if (typeof reference !== 'string' || reference.length === 0) {
-    throw new TypeError('ref must be a non-empty string or function.');
+    throw new TypeError('Invalid ref');
   }
 
   owner.refs[reference] = node;
@@ -109,12 +99,6 @@ function bindValue(owner, node, target, candidate) {
   owner.bind(node, target, candidate);
 }
 
-function bindGroup(owner, node, target, values) {
-  for (const [name, candidate] of Object.entries(values)) {
-    bindValue(owner, node, `${target}:${name}`, candidate);
-  }
-}
-
 function applyProperty(owner, node, key, candidate) {
   const separator = key.indexOf(':');
 
@@ -123,13 +107,19 @@ function applyProperty(owner, node, key, candidate) {
     const name = key.slice(separator + 1);
 
     if (prefix === 'on') {
-      owner.listen(node, name, candidate);
+      const event = readEventBinding(candidate);
+      owner.listen(node, name, event?.handler ?? candidate, event?.options);
       return;
     }
 
     const target = BINDING_PREFIXES[prefix];
     if (target) {
       bindValue(owner, node, `${target}:${name}`, candidate);
+      return;
+    }
+
+    if (prefix === 'prop') {
+      bindValue(owner, node, `property:${name}`, candidate);
       return;
     }
   }
@@ -141,12 +131,6 @@ function applyProperty(owner, node, key, candidate) {
 
   if (key === 'class') {
     bindValue(owner, node, 'property:className', candidate);
-    return;
-  }
-
-  const groupTarget = BINDING_GROUPS[key];
-  if (groupTarget && candidate && typeof candidate === 'object' && !candidate[VALUE]) {
-    bindGroup(owner, node, groupTarget, candidate);
     return;
   }
 
@@ -197,7 +181,7 @@ function appendDescription(owner, parent, description) {
 
 export function view(owner, description) {
   if (!owner?.scope) {
-    throw new TypeError('view() expects a component owner.');
+    throw new TypeError('view: owner required');
   }
 
   if (description instanceof Node) {
@@ -221,23 +205,31 @@ export function view(owner, description) {
   }
 
   if (!description || typeof description !== 'object' || Array.isArray(description)) {
-    throw new TypeError(
-      'A view root must be an element description, Node, Signal, or primitive value.',
-    );
+    throw new TypeError('Invalid view root');
   }
 
-  const tag = description.tag || description.nodeName || 'div';
-  const namespace = description.namespace
-    || (tag === 'svg' ? 'http://www.w3.org/2000/svg' : null);
+  if (isElementBuilder(description)) {
+    const node = description.namespace
+      ? document.createElementNS(description.namespace, description.name)
+      : document.createElement(description.name);
+
+    for (const [key, candidate] of Object.entries(description.properties)) {
+      if (key === 'ref') {
+        applyReference(owner, candidate, node);
+      } else {
+        applyProperty(owner, node, key, candidate);
+      }
+    }
+
+    appendDescription(owner, node, description.content);
+    return node;
+  }
+
+  const tag = description.tag || 'div';
+  const namespace = description.namespace;
   const node = namespace
     ? document.createElementNS(namespace, tag)
     : document.createElement(tag);
-
-  for (const key of PRESET_KEYS) {
-    if (description[key] !== undefined) {
-      applyProperty(owner, node, key, description[key]);
-    }
-  }
 
   for (const [key, candidate] of Object.entries(description)) {
     if (RESERVED_KEYS.has(key)) {
@@ -260,7 +252,7 @@ export function view(owner, description) {
 
 export class ViewComponent extends Component {
   template() {
-    throw new Error('ViewComponent.template() must return an element description.');
+    throw new Error('template() required');
   }
 
   create() {

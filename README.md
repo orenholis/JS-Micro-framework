@@ -1,12 +1,25 @@
-# Constrained UI framework – demonstrační prototyp
+# Constrained UI framework – V0
 
-Tento adresář obsahuje první spustitelnou implementaci návrhu z bakalářské práce.
-Prototyp používá pouze standardní ES moduly a Web API, nemá runtime závislosti a ke spuštění nevyžaduje build.
+V0 je funkční implementace návrhu z bakalářské práce. Framework používá pouze
+standardní ES moduly a Web API, nemá běhové závislosti a ke spuštění aplikace
+nevyžaduje build. Produkční build slouží pouze k vytvoření menší distribuce.
 
-Elementy se zapisují jako jeden deklarativní strom inspirovaný GW.
-Renderer strom jednou projde a přímo vytvoří skutečné DOM uzly; nevzniká virtuální DOM ani nutnost ručně volat `append` pro každého potomka.
+## Zápis komponent
+
+HTML elementy představují funkce a jejich nastavení se řetězí. Potomci se
+předávají přímo funkci elementu, takže se nikde neopakuje `nodeName`,
+`className`, `children` ani ruční `append`.
 
 ```js
+import {
+  ViewComponent,
+  button,
+  div,
+  mount,
+  strong,
+  value,
+} from './src/index.js';
+
 class Counter extends ViewComponent {
   constructor() {
     super();
@@ -14,90 +27,99 @@ class Counter extends ViewComponent {
   }
 
   template() {
-    return {
-      tag: 'button',
-      class: 'counter',
-      'class:is-positive': value(this.count, count => count > 0),
-      'on:click': () => this.count.update(count => count + 1),
-      children: [
+    return div(
+      button(
         'Počet kliknutí: ',
-        { tag: 'strong', text: value(this.count) },
-      ],
-    };
+        strong(value(this.count)),
+      )
+        .class('counter')
+        .class('is-positive', value(this.count, (count) => count > 0))
+        .prop('type', 'button')
+        .on('click', () => this.count.update((count) => count + 1)),
+    ).class('counter-wrapper');
   }
 }
+
+mount(new Counter(), document.querySelector('#app'));
 ```
 
-Podporované části zápisu:
+Builder elementu podporuje:
 
-- `tag` nebo kompatibilní `nodeName` určuje typ elementu;
-- `children` obsahuje libovolně vnořené elementy, texty a komponenty;
-- `text` nastavuje statický nebo reaktivní text;
-- `on:click` a další `on:*` registrují lifecycle-aware události;
-- `attr:*`, `class:*` a `style:*` přijímají statické i reaktivní hodnoty;
-- `ref` ukládá uzel do `this.refs` bez následného hledání v DOM;
-- `value(signal, transformace)` vytváří explicitní reaktivní vazbu;
-- `show(signal, render)` vytváří podmíněný podstrom;
-- `each(signal, { key, render })` vytváří keyed seznam.
+- `.class('card', 'card--wide')` pro statické CSS třídy;
+- `.class('is-active', value(signal))` pro reaktivní třídu;
+- `.attr(name, value)`, `.aria(name, value)` a `.data(name, value)`;
+- `.prop(name, value)` pro DOM vlastnosti, například `disabled` nebo `value`;
+- `.style(name, value)` pro statické i reaktivní styly;
+- `.on(type, handler, options)` pro události svázané s životním cyklem;
+- `.ref(name)` pro uložení skutečného uzlu do `this.refs`;
+- `.text(value)`, `.child(value)` a `.children(...values)` pro obsah.
 
-## Spuštění
+Každá hodnota přijímaná atributem, vlastností, třídou nebo stylem může být
+statická nebo vytvořená pomocí `value(signal, transformace)`. `show(...)`
+spravuje podmíněný podstrom a `each(...)` seznam se stabilními klíči.
 
-Vyžaduje Node.js pouze jako lokální HTTP server:
+Pro neobvyklé HTML elementy lze místo pojmenované funkce použít
+`tag('custom-element')`. Původní objektový popis a nízkoúrovňové funkce zůstaly
+dostupné pro kompatibilitu a nestandardní použití.
+
+## Princip vykreslování
+
+Řetězitelný builder není virtuální DOM. Existuje jen během úvodního průchodu
+metodou `template()`, kdy se z něj rovnou vytvoří skutečné DOM uzly. Framework
+si potom ponechá jen explicitní vazby na dynamická místa. Změna signálu proto
+upraví konkrétní text, atribut, vlastnost, třídu nebo styl a znovu nevykresluje
+celou komponentu.
+
+Komponenta vlastní své reaktivní odběry, obsluhy událostí a vnořené komponenty.
+`destroy()` je odstraní a uvolní. Podmíněný obsah používá hraniční komentářové
+uzly a seznam zachovává podle klíče identitu nezměněných položek.
+
+## Spuštění a ověření
 
 ```text
+npm install
 npm run serve
 ```
 
-Poté otevřete:
+Poté lze otevřít:
 
-- demonstrační kiosk: `http://127.0.0.1:4173/demo/`
-- testy: `http://127.0.0.1:4173/tests/`
+- kiosk: `http://127.0.0.1:4173/demo/`
+- prohlížečové testy: `http://127.0.0.1:4173/tests/`
 
-Základní testy frameworkového jádra lze spustit i bez prohlížeče:
-
-```text
-npm test
-```
-
-Velikosti zdrojových modulů a jejich komprimovaných variant vypíše:
+Úplné lokální ověření včetně produkčního buildu a velikosti:
 
 ```text
-npm run size
+npm run verify
 ```
 
-## Implementované vlastnosti
+`npm run build` vytvoří:
 
-- `FR1`: třídní komponenty, mount, destroy, vlastnictví potomků a idempotentní cleanup;
-- `FR2`: deklarativní strom s přímou tvorbou a cílenou aktualizací skutečných DOM uzlů;
-- `FR3`: synchronní signály, explicitní odběry a vazby na text, vlastnosti, atributy, třídy a styly;
-- `FR4`: podmíněné podstromy a keyed kolekce zachovávající identitu uzlů;
+- `dist/modules/` – čitelné ES moduly pro přímé použití;
+- `dist/constrained-ui.min.js` a sdílený chunk – minifikované jádro;
+- `dist/svg.min.js` – volitelný SVG modul.
+
+Aktuální V0 má 9 680 B minifikovaného jádra (3 735 B gzip, 3 338 B brotli).
+Volitelný SVG vstup přidává 443 B před kompresí. Hodnoty reprodukuje
+`npm run size`.
+
+## Pokrytí požadavků
+
+- `FR1`: třídní komponenty, mount, destroy, vlastnictví potomků a idempotentní uvolnění;
+- `FR2`: řetězitelný deklarativní zápis a přímé cílené aktualizace DOM;
+- `FR3`: synchronní signály a explicitní vazby na text, vlastnosti, atributy, třídy a styly;
+- `FR4`: podmíněné podstromy a seznamy se stabilními klíči;
 - `FR5`: přímé listenery sdílející `AbortController` komponenty;
-- `FR6`: skládání komponent a předávání callbacků směrem k rodiči;
-- `FR7`: samostatný volitelný SVG modul;
-- `NFR1`: rozdělení na nezávislé ES moduly;
-- `NFR3`: přímé spuštění v prohlížeči bez bundleru a transpilace;
-- `NFR4`: synchronní aktualizace bez virtuálního DOM a implicitního plánovače;
-- `NFR5`: použití standardního moderního JavaScriptu a Web API.
+- `FR6`: skládání komponent, reaktivní vstupy položek a callbacky k rodiči;
+- `FR7`: samostatný řetězitelný SVG modul;
+- `NFR1`: nezávislé ES moduly a oddělená podpora SVG;
+- `NFR2`: minifikované jádro V0 je menší než stanovených 10 kB;
+- `NFR3`: zdrojové ES moduly i demo fungují bez buildu aplikace;
+- `NFR4`: synchronní aktualizace skutečného DOM bez virtuálního stromu a plánovače;
+- `NFR5`: standardní ECMAScript 2023 a Web API.
 
-Požadavek `NFR2` zatím nelze prohlásit za splněný.
-Skript měří neoptimalizované moduly, zatímco limit 10 kB se vztahuje na skutečnou minifikovanou distribuční variantu.
+## Rozsah V0
 
-## Struktura
-
-- `src/state.js` – signály a odvozené hodnoty;
-- `src/dom.js` – tvorba uzlů a explicitní vazby;
-- `src/core.js` – scope, komponenty a lifecycle;
-- `src/collections.js` – podmíněný obsah a keyed seznamy;
-- `src/template.js` – rekurzivní převod deklarativního stromu na skutečný DOM;
-- `src/svg.js` – volitelná podpora SVG;
-- `demo/` – kiosková demonstrační aplikace;
-- `tests/` – testy spouštěné přímo v prohlížeči.
-
-## Omezení prototypu
-
-- Veřejné názvy API jsou pracovní; aktuální hlavní rozhraní tvoří `ViewComponent`, `value`, `show` a `each`.
-- Komponenta má právě jeden trvalý kořenový uzel; vícenásobné kořeny řeší obalovým elementem.
-- Seznam podporuje stabilní klíče, ale neprovádí minimalizaci počtu přesunů pomocí longest increasing subsequence.
-- Přímé listenery jsou záměrnou výchozí volbou; delegace událostí není implementována.
-- Prototyp neobsahuje router, globální store, SSR, hydrataci ani vlastní datovou vrstvu.
-- Produkční bundling, minifikace, typové deklarace a měření na cílovém zařízení patří do další fáze.
+V0 záměrně neobsahuje router, globální úložiště, SSR, hydrataci ani vlastní
+datovou vrstvu. Seznam zatím neoptimalizuje počet přesunů pomocí longest
+increasing subsequence a události používají přímé listenery namísto delegace.
+Tyto body nejsou součástí požadavků na jádro práce.

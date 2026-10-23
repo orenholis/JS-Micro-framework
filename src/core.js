@@ -11,7 +11,7 @@ export class Scope {
 
   own(cleanup) {
     if (typeof cleanup !== 'function') {
-      throw new TypeError('A cleanup must be a function.');
+      throw new TypeError('Invalid cleanup');
     }
 
     if (this.#destroyed) {
@@ -60,21 +60,21 @@ export class Component {
   }
 
   create() {
-    throw new Error('Component.create() must return one root Node.');
+    throw new Error('create() required');
   }
 
   mount(target, before = null) {
     if (this.#mounted) {
-      throw new Error('The component is already mounted.');
+      throw new Error('Already mounted');
     }
 
     if (!(target instanceof Node)) {
-      throw new TypeError('The mount target must be a DOM Node.');
+      throw new TypeError('Invalid mount target');
     }
 
     const root = this.create();
     if (!(root instanceof Node) || root instanceof DocumentFragment) {
-      throw new TypeError('Component.create() must return one persistent root Node.');
+      throw new TypeError('Invalid component root');
     }
 
     this.root = root;

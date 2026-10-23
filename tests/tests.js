@@ -2,7 +2,9 @@ import {
   Component,
   Scope,
   ViewComponent,
+  button,
   computed,
+  div,
   element,
   list,
   mount,
@@ -10,6 +12,7 @@ import {
   value,
   when,
 } from '../src/index.js';
+import { circle, svg, SVG_NAMESPACE } from '../src/svg.js';
 
 const results = [];
 const sandbox = document.querySelector('#sandbox');
@@ -100,6 +103,70 @@ test('Deklarativní strom vytvoří vnořený DOM bez ručního append', () => {
   assert(counter.refs.button.classList.contains('is-positive'), 'Reaktivní CSS třída se neaktualizovala.');
   counter.destroy();
   assert(counter.count.subscriberCount === 0, 'Deklarativní vazby nebyly při destrukci uvolněny.');
+});
+
+test('Fluent zápis řetězí element, třídy, atributy, událost a obsah', () => {
+  class Counter extends ViewComponent {
+    constructor() {
+      super();
+      this.count = this.signal(0);
+      this.color = this.signal('red');
+    }
+
+    template() {
+      return div(
+        button('Počet: ', value(this.count))
+          .class('counter')
+          .class('is-positive', value(this.count, (count) => count > 0))
+          .prop('type', 'button')
+          .aria('label', 'Zvýšit počet')
+          .data('testid', 'counter')
+          .style('color', value(this.color))
+          .ref('button')
+          .on('click', () => this.count.update((count) => count + 1)),
+      ).class('wrapper').ref('root');
+    }
+  }
+
+  const counter = mount(new Counter(), sandbox);
+  const buttonNode = counter.refs.button;
+  assert(counter.root === counter.refs.root, 'Reference kořene nebyla uložena.');
+  assert(buttonNode.getAttribute('aria-label') === 'Zvýšit počet', 'ARIA atribut nebyl nastaven.');
+  assert(buttonNode.dataset.testid === 'counter', 'Datový atribut nebyl nastaven.');
+  buttonNode.click();
+  counter.color.value = 'blue';
+  assert(buttonNode.textContent === 'Počet: 1', 'Reaktivní text se neaktualizoval.');
+  assert(buttonNode.classList.contains('is-positive'), 'Reaktivní třída se neaktualizovala.');
+  assert(buttonNode.style.color === 'blue', 'Reaktivní styl se neaktualizoval.');
+  counter.destroy();
+  assert(counter.count.subscriberCount === 0 && counter.color.subscriberCount === 0, 'Fluent vazby nebyly uvolněny.');
+});
+
+test('Volitelný SVG modul vytvoří a aktualizuje SVG element', () => {
+  class Icon extends ViewComponent {
+    constructor() {
+      super();
+      this.radius = this.signal(4);
+    }
+
+    template() {
+      return svg(
+        circle()
+          .attr('cx', 8)
+          .attr('cy', 8)
+          .attr('r', value(this.radius)),
+      ).attr('viewBox', '0 0 16 16');
+    }
+  }
+
+  const icon = mount(new Icon(), sandbox);
+  const circleNode = icon.root.firstChild;
+  assert(icon.root.namespaceURI === SVG_NAMESPACE, 'Kořen nemá SVG namespace.');
+  assert(circleNode.namespaceURI === SVG_NAMESPACE, 'Potomek nemá SVG namespace.');
+  icon.radius.value = 6;
+  assert(circleNode.getAttribute('r') === '6', 'SVG atribut se neaktualizoval.');
+  icon.destroy();
+  assert(icon.radius.subscriberCount === 0, 'SVG vazba nebyla uvolněna.');
 });
 
 test('Událost se po destrukci komponenty již neprovede', () => {
