@@ -95,10 +95,21 @@ npm install
 npm run serve
 ```
 
+Server vyžaduje Node.js 22.13 nebo novější, protože pro demonstrační data
+používá vestavěný modul SQLite. Při prvním spuštění automaticky vytvoří
+`framework/.data/kiosk.sqlite`, aplikuje schéma a vloží opakovatelnou sadu
+kategorií a produktů. Tento vygenerovaný soubor není součástí repozitáře.
+
 Poté lze otevřít:
 
 - kiosk: `http://127.0.0.1:4173/demo/`
+- kontrola API: `http://127.0.0.1:4173/api/health`
 - prohlížečové testy: `http://127.0.0.1:4173/tests/`
+
+Katalog poskytují endpointy `GET /api/categories`, `GET /api/menu-items`,
+`GET /api/menu-items?category=<id>` a `GET /api/menu-items/<id>`. Schéma už
+obsahuje také tabulky objednávek; jejich zápis bude zapojen v další části
+implementace kiosku.
 
 Úplné lokální ověření včetně produkčního buildu a velikosti:
 
