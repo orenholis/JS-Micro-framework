@@ -1,5 +1,5 @@
 import { ViewComponent, button, div, h2, p, section } from '../../src/index.js';
-import { money } from '../format.js';
+import { formatItemCount, money } from '../format.js';
 
 export class Confirmation extends ViewComponent {
 	template() {
@@ -9,7 +9,7 @@ export class Confirmation extends ViewComponent {
 			section(
 				div('✓').class('confirmation__icon').aria('hidden', 'true'),
 				h2('Objednávka přijata'),
-				p(`${summary.count} položek v hodnotě ${money(summary.total)}.`),
+				p(`${formatItemCount(summary.count)} v hodnotě ${money(summary.total)}.`),
 				button('Nová objednávka')
 					.class('primary-button')
 					.prop('type', 'button')

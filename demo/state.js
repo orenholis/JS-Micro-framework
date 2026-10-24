@@ -32,6 +32,10 @@ export function removeCartItem(cart, itemId) {
 	return cart.filter((row) => row.id !== itemId);
 }
 
+export function clearCart(cart) {
+	return cart.length === 0 ? cart : [];
+}
+
 export function summarizeCart(cart) {
 	let count = 0;
 	let total = 0;

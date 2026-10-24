@@ -1,6 +1,6 @@
 import { ViewComponent, div, main, show } from '../../src/index.js';
 import { ApiError, catalogApi } from '../api.js';
-import { addCartItem, changeCartItemQuantity, removeCartItem, summarizeCart } from '../state.js';
+import { addCartItem, changeCartItemQuantity, clearCart, removeCartItem, summarizeCart } from '../state.js';
 import { CartPanel } from './CartPanel.js';
 import { Catalog } from './Catalog.js';
 import { Confirmation } from './Confirmation.js';
@@ -24,6 +24,7 @@ export class KioskApp extends ViewComponent {
 		this.detailStatus = this.signal('idle');
 		this.detailError = this.signal('');
 		this.cart = this.signal([]);
+		this.cartSummary = this.computed(this.cart, summarizeCart);
 		this.confirmation = this.signal(null);
 		this.catalogRequest = null;
 		this.catalogRequestId = 0;
@@ -188,13 +189,17 @@ export class KioskApp extends ViewComponent {
 		this.cart.value = removeCartItem(this.cart.value, itemId);
 	}
 
+	clearCart() {
+		this.cart.value = clearCart(this.cart.value);
+	}
+
 	confirmOrder() {
-		this.confirmation.value = summarizeCart(this.cart.value);
+		this.confirmation.value = this.cartSummary.value;
 	}
 
 	template() {
 		return main(
-			new TopBar({ cart: this.cart }),
+			new TopBar({ summary: this.cartSummary }),
 
 			div(
 				new Catalog({
@@ -210,6 +215,8 @@ export class KioskApp extends ViewComponent {
 				}),
 				new CartPanel({
 					cart: this.cart,
+					summary: this.cartSummary,
+					onClear: () => this.clearCart(),
 					onIncrease: (itemId) => this.changeQuantity(itemId, 1),
 					onDecrease: (itemId) => this.changeQuantity(itemId, -1),
 					onRemove: (itemId) => this.removeFromCart(itemId),

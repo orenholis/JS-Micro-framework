@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { menuItems } from '../demo/data.js';
+import { formatItemCount } from '../demo/format.js';
 import {
 	addCartItem,
 	changeCartItemQuantity,
+	clearCart,
 	removeCartItem,
 	summarizeCart,
 } from '../demo/state.js';
@@ -79,6 +81,14 @@ test('odebrání odstraní pouze zvolenou položku', () => {
 	assert.equal(removeCartItem(cart, 999), cart);
 });
 
+test('vyprázdnění odstraní celý obsah a prázdný košík zachová', () => {
+	const cart = [{ ...menuItems[0], quantity: 1 }];
+	const emptyCart = [];
+
+	assert.deepEqual(clearCart(cart), []);
+	assert.equal(clearCart(emptyCart), emptyCart);
+});
+
 test('souhrn spočítá počet kusů a celkovou cenu', () => {
 	const cart = [
 		{ ...menuItems[0], quantity: 2 },
@@ -90,6 +100,15 @@ test('souhrn spočítá počet kusů a celkovou cenu', () => {
 		total: menuItems[0].price * 2 + menuItems[2].price * 3,
 	});
 	assert.deepEqual(summarizeCart([]), { count: 0, total: 0 });
+});
+
+test('počet položek používá správný český tvar', () => {
+	assert.equal(formatItemCount(0), '0 položek');
+	assert.equal(formatItemCount(1), '1 položka');
+	assert.equal(formatItemCount(2), '2 položky');
+	assert.equal(formatItemCount(4), '4 položky');
+	assert.equal(formatItemCount(5), '5 položek');
+	assert.equal(formatItemCount(21), '21 položek');
 });
 
 console.log(`\n${passed} testů doménové logiky kiosku prošlo.`);

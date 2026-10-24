@@ -10,24 +10,44 @@ import {
 	strong,
 	value,
 } from '../../src/index.js';
-import { money } from '../format.js';
-import { summarizeCart } from '../state.js';
+import { formatItemCount, money } from '../format.js';
 import { CartRow } from './CartRow.js';
 
 export class CartPanel extends ViewComponent {
 	template() {
-		const { cart, onConfirm, onDecrease, onIncrease, onRemove } = this.props;
+		const { cart, onClear, onConfirm, onDecrease, onIncrease, onRemove, summary } = this.props;
 
 		return aside(
-			div(div(p('Aktuální výběr').class('eyebrow'), h2('Objednávka').id('cart-title'))).class(
-				'cart-panel__heading',
-			),
+			div(
+				div(
+					p('Aktuální výběr').class('eyebrow'),
+					h2('Objednávka').id('cart-title').attr('tabindex', '-1').ref('title'),
+				),
+				button('Vyprázdnit')
+					.class('clear-cart-button')
+					.prop('type', 'button')
+					.prop('hidden', value(summary, (current) => current.count === 0))
+					.aria('label', 'Vyprázdnit objednávku')
+					.on('click', () => {
+						onClear();
+						this.refs.title.focus();
+					}),
+			).class('cart-panel__heading'),
+
+			span(value(
+				summary,
+				(current) =>
+					`V objednávce ${current.count === 1 ? 'je' : 'jsou'} ${formatItemCount(current.count)}. Celkem ${money(current.total)}.`,
+			))
+				.class('visually-hidden')
+				.aria('live', 'polite')
+				.aria('atomic', 'true'),
 
 			p('Zatím jste nic nevybrali.')
 				.class('empty-state')
 				.prop(
 					'hidden',
-					value(cart, (rows) => rows.length > 0),
+					value(summary, (current) => current.count > 0),
 				),
 
 			div(
@@ -39,7 +59,7 @@ export class CartPanel extends ViewComponent {
 
 			div(
 				span('Celkem'),
-				strong(value(cart, (rows) => money(summarizeCart(rows).total))).class(
+				strong(value(summary, (current) => money(current.total))).class(
 					'total-value',
 				),
 			).class('total-row'),
@@ -49,7 +69,7 @@ export class CartPanel extends ViewComponent {
 				.prop('type', 'button')
 				.prop(
 					'disabled',
-					value(cart, (rows) => rows.length === 0),
+					value(summary, (current) => current.count === 0),
 				)
 				.on('click', onConfirm),
 		)
