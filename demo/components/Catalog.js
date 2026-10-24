@@ -1,9 +1,9 @@
-import { ViewComponent, button, div, each, h1, nav, p, section, value } from '../../src/index.js';
+import { ViewComponent, button, div, each, h1, nav, p, section, span, value } from '../../src/index.js';
 import { MenuItem } from './MenuItem.js';
 
 export class Catalog extends ViewComponent {
 	template() {
-		const { categories, category, items, onCategorySelect, onItemOpen } = this.props;
+		const { categories, category, empty, error, items, onCategorySelect, onItemOpen, onRetry, status } = this.props;
 
 		return section(
 			div(
@@ -17,30 +17,57 @@ export class Catalog extends ViewComponent {
 			).class('section-heading'),
 
 			nav(
-				categories.map((item) =>
-					button(item.name)
+				each(categories, {
+					key: (item) => item.id,
+					render: (item) => button(value(item, (current) => current.name))
 						.class('category-button')
 						.class(
 							'is-active',
-							value(category, (current) => current === item.id),
+							value(category, (current) => current === item.value.id),
 						)
 						.prop('type', 'button')
 						.attr(
 							'aria-current',
-							value(category, (current) => (current === item.id ? 'true' : null)),
+							value(category, (current) =>
+								current === item.value.id ? 'true' : null,
+							),
 						)
-						.on('click', () => onCategorySelect(item.id)),
-				),
+						.on('click', () => onCategorySelect(item.value.id)),
+				}),
 			)
 				.class('categories')
-				.aria('label', 'Kategorie menu'),
+				.aria('label', 'Kategorie menu')
+				.prop('hidden', value(categories, (current) => current.length === 0)),
+
+			div(span('Načítám nabídku…').class('catalog-status__message'))
+				.class('catalog-status')
+				.attr('role', 'status')
+				.aria('live', 'polite')
+				.prop('hidden', value(status, (current) => current !== 'loading')),
+
+			div(
+				p(value(error)).class('catalog-status__message'),
+				button('Zkusit znovu')
+					.class('secondary-button')
+					.prop('type', 'button')
+					.on('click', onRetry),
+			)
+				.class('catalog-status', 'catalog-status--error')
+				.attr('role', 'alert')
+				.prop('hidden', value(status, (current) => current !== 'error')),
+
+			p('V této kategorii zatím nejsou žádné položky.')
+				.class('catalog-status', 'catalog-status__message')
+				.prop('hidden', value(empty, (current) => !current)),
 
 			div(
 				each(items, {
 					key: (item) => item.id,
 					render: (item) => new MenuItem({ item, onOpen: onItemOpen }),
 				}),
-			).class('menu-grid'),
+			)
+				.class('menu-grid')
+				.prop('hidden', value(status, (current) => current !== 'ready')),
 		)
 			.class('catalog')
 			.aria('labelledby', 'menu-title');

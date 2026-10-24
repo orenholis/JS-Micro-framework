@@ -1,7 +1,3 @@
-export function filterMenuItems(items, categoryId) {
-	return items.filter((item) => item.category === categoryId);
-}
-
 export function addCartItem(cart, item) {
 	const existingIndex = cart.findIndex((row) => row.id === item.id);
 

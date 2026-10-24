@@ -9,7 +9,7 @@
     "format:check": "prettier \"{demo,tests}/**/*.{css,html}\" --check",
     "lint": "eslint . && npm run format:check",
     "serve": "node tools/server.mjs",
-    "test": "node tests/node-smoke.mjs && node tests/kiosk-state.mjs && node tests/server.mjs",
+    "test": "node tests/node-smoke.mjs && node tests/kiosk-state.mjs && node tests/catalog-api.mjs && node tests/server.mjs",
     "size": "npm run build --silent && node tools/size.mjs",
     "verify": "npm run lint && npm test && npm run size"
   },

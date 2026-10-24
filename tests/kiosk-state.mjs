@@ -3,7 +3,6 @@ import { menuItems } from '../demo/data.js';
 import {
 	addCartItem,
 	changeCartItemQuantity,
-	filterMenuItems,
 	removeCartItem,
 	summarizeCart,
 } from '../demo/state.js';
@@ -15,16 +14,6 @@ function test(name, run) {
 	passed += 1;
 	console.log(`✓ ${name}`);
 }
-
-test('filtrace vrátí pouze položky zvolené kategorie', () => {
-	const result = filterMenuItems(menuItems, 'drinks');
-
-	assert.deepEqual(
-		result.map((item) => item.id),
-		[8, 9],
-	);
-	assert.equal(menuItems.length, 9, 'Zdrojová nabídka se nesmí změnit.');
-});
 
 test('nová položka se přidá s množstvím jedna', () => {
 	const cart = [];

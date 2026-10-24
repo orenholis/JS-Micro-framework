@@ -16,6 +16,10 @@
 	box-sizing: border-box;
 }
 
+[hidden] {
+	display: none !important;
+}
+
 body {
 	margin: 0;
 	min-width: 320px;
@@ -145,6 +149,39 @@ h2 {
 	border-color: #173c2d;
 	color: white;
 	background: #173c2d;
+}
+
+.catalog-status {
+	display: grid;
+	min-height: 190px;
+	place-items: center;
+	padding: 28px;
+	border: 1px dashed #c8d2cc;
+	border-radius: 22px;
+	color: #637068;
+	background: rgb(255 255 255 / 55%);
+	text-align: center;
+}
+
+.catalog-status--error {
+	gap: 14px;
+	border-color: #dcb8ae;
+	color: #8c3825;
+	background: #fff7f4;
+}
+
+.catalog-status__message {
+	margin: 0;
+}
+
+.secondary-button {
+	padding: 10px 16px;
+	border: 1px solid #173c2d;
+	border-radius: 12px;
+	color: #173c2d;
+	background: white;
+	font-weight: 700;
+	cursor: pointer;
 }
 
 .menu-grid {
