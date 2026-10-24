@@ -1,97 +1,106 @@
 import assert from 'node:assert/strict';
 import { menuItems } from '../demo/data.js';
 import {
-  addCartItem,
-  changeCartItemQuantity,
-  filterMenuItems,
-  removeCartItem,
-  summarizeCart,
+	addCartItem,
+	changeCartItemQuantity,
+	filterMenuItems,
+	removeCartItem,
+	summarizeCart,
 } from '../demo/state.js';
 
 let passed = 0;
 
 function test(name, run) {
-  run();
-  passed += 1;
-  console.log(`✓ ${name}`);
+	run();
+	passed += 1;
+	console.log(`✓ ${name}`);
 }
 
 test('filtrace vrátí pouze položky zvolené kategorie', () => {
-  const result = filterMenuItems(menuItems, 'drinks');
+	const result = filterMenuItems(menuItems, 'drinks');
 
-  assert.deepEqual(result.map((item) => item.id), [8, 9]);
-  assert.equal(menuItems.length, 9, 'Zdrojová nabídka se nesmí změnit.');
+	assert.deepEqual(
+		result.map((item) => item.id),
+		[8, 9],
+	);
+	assert.equal(menuItems.length, 9, 'Zdrojová nabídka se nesmí změnit.');
 });
 
 test('nová položka se přidá s množstvím jedna', () => {
-  const cart = [];
-  const item = menuItems[0];
-  const result = addCartItem(cart, item);
+	const cart = [];
+	const item = menuItems[0];
+	const result = addCartItem(cart, item);
 
-  assert.deepEqual(result, [{ ...item, quantity: 1 }]);
-  assert.deepEqual(cart, [], 'Původní košík se nesmí změnit.');
-  assert.equal(item.quantity, undefined, 'Položka nabídky se nesmí změnit.');
+	assert.deepEqual(result, [{ ...item, quantity: 1 }]);
+	assert.deepEqual(cart, [], 'Původní košík se nesmí změnit.');
+	assert.equal(item.quantity, undefined, 'Položka nabídky se nesmí změnit.');
 });
 
 test('opakované přidání zvýší množství a zachová ostatní řádky', () => {
-  const unaffectedRow = { ...menuItems[1], quantity: 1 };
-  const cart = [{ ...menuItems[0], quantity: 1 }, unaffectedRow];
-  const result = addCartItem(cart, menuItems[0]);
+	const unaffectedRow = { ...menuItems[1], quantity: 1 };
+	const cart = [{ ...menuItems[0], quantity: 1 }, unaffectedRow];
+	const result = addCartItem(cart, menuItems[0]);
 
-  assert.equal(result[0].quantity, 2);
-  assert.equal(result[1], unaffectedRow);
-  assert.equal(cart[0].quantity, 1, 'Původní řádek se nesmí změnit.');
+	assert.equal(result[0].quantity, 2);
+	assert.equal(result[1], unaffectedRow);
+	assert.equal(cart[0].quantity, 1, 'Původní řádek se nesmí změnit.');
 });
 
 test('změna množství aktualizuje pouze nalezenou položku', () => {
-  const unaffectedRow = { ...menuItems[1], quantity: 1 };
-  const cart = [{ ...menuItems[0], quantity: 2 }, unaffectedRow];
-  const result = changeCartItemQuantity(cart, menuItems[0].id, -1);
+	const unaffectedRow = { ...menuItems[1], quantity: 1 };
+	const cart = [{ ...menuItems[0], quantity: 2 }, unaffectedRow];
+	const result = changeCartItemQuantity(cart, menuItems[0].id, -1);
 
-  assert.equal(result[0].quantity, 1);
-  assert.equal(result[1], unaffectedRow);
+	assert.equal(result[0].quantity, 1);
+	assert.equal(result[1], unaffectedRow);
 });
 
 test('snížení množství na nulu položku odstraní', () => {
-  const cart = [
-    { ...menuItems[0], quantity: 1 },
-    { ...menuItems[1], quantity: 2 },
-  ];
-  const result = changeCartItemQuantity(cart, menuItems[0].id, -1);
+	const cart = [
+		{ ...menuItems[0], quantity: 1 },
+		{ ...menuItems[1], quantity: 2 },
+	];
+	const result = changeCartItemQuantity(cart, menuItems[0].id, -1);
 
-  assert.deepEqual(result.map((row) => row.id), [menuItems[1].id]);
+	assert.deepEqual(
+		result.map((row) => row.id),
+		[menuItems[1].id],
+	);
 });
 
 test('neplatná změna zbytečně nevytvoří nový košík', () => {
-  const cart = [{ ...menuItems[0], quantity: 1 }];
+	const cart = [{ ...menuItems[0], quantity: 1 }];
 
-  assert.equal(changeCartItemQuantity(cart, 999, 1), cart);
-  assert.equal(changeCartItemQuantity(cart, menuItems[0].id, 0), cart);
-  assert.equal(changeCartItemQuantity(cart, menuItems[0].id, Number.NaN), cart);
+	assert.equal(changeCartItemQuantity(cart, 999, 1), cart);
+	assert.equal(changeCartItemQuantity(cart, menuItems[0].id, 0), cart);
+	assert.equal(changeCartItemQuantity(cart, menuItems[0].id, Number.NaN), cart);
 });
 
 test('odebrání odstraní pouze zvolenou položku', () => {
-  const cart = [
-    { ...menuItems[0], quantity: 1 },
-    { ...menuItems[1], quantity: 1 },
-  ];
-  const result = removeCartItem(cart, menuItems[0].id);
+	const cart = [
+		{ ...menuItems[0], quantity: 1 },
+		{ ...menuItems[1], quantity: 1 },
+	];
+	const result = removeCartItem(cart, menuItems[0].id);
 
-  assert.deepEqual(result.map((row) => row.id), [menuItems[1].id]);
-  assert.equal(removeCartItem(cart, 999), cart);
+	assert.deepEqual(
+		result.map((row) => row.id),
+		[menuItems[1].id],
+	);
+	assert.equal(removeCartItem(cart, 999), cart);
 });
 
 test('souhrn spočítá počet kusů a celkovou cenu', () => {
-  const cart = [
-    { ...menuItems[0], quantity: 2 },
-    { ...menuItems[2], quantity: 3 },
-  ];
+	const cart = [
+		{ ...menuItems[0], quantity: 2 },
+		{ ...menuItems[2], quantity: 3 },
+	];
 
-  assert.deepEqual(summarizeCart(cart), {
-    count: 5,
-    total: menuItems[0].price * 2 + menuItems[2].price * 3,
-  });
-  assert.deepEqual(summarizeCart([]), { count: 0, total: 0 });
+	assert.deepEqual(summarizeCart(cart), {
+		count: 5,
+		total: menuItems[0].price * 2 + menuItems[2].price * 3,
+	});
+	assert.deepEqual(summarizeCart([]), { count: 0, total: 0 });
 });
 
 console.log(`\n${passed} testů doménové logiky kiosku prošlo.`);

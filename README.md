@@ -117,6 +117,11 @@ implementace kiosku.
 npm run verify
 ```
 
+Zdrojové soubory používají pro odsazení skutečné tabulátory. Víceřádkové
+destrukturování objektů linter nepovoluje. Formátování lze sjednotit příkazem
+`npm run format` a samostatně zkontrolovat příkazem `npm run lint`; stejná
+kontrola je součástí `npm run verify`.
+
 `npm run build` vytvoří:
 
 - `dist/modules/` – čitelné ES moduly pro přímé použití;

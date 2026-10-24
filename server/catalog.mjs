@@ -16,29 +16,30 @@ const listMenuItemsStatement = `
 `;
 
 function toPlainObject(row) {
-  return { ...row };
+	return { ...row };
 }
 
 export function listCategories(database) {
-  return database
-    .prepare(listCategoriesStatement)
-    .all()
-    .map(toPlainObject);
+	return database.prepare(listCategoriesStatement).all().map(toPlainObject);
 }
 
 export function listMenuItems(database, categoryId = null) {
-  const statement = categoryId
-    ? database.prepare(`${listMenuItemsStatement} WHERE category_id = ? ORDER BY position`)
-    : database.prepare(`${listMenuItemsStatement} ORDER BY position`);
-  const rows = categoryId ? statement.all(categoryId) : statement.all();
-  return rows.map(toPlainObject);
+	const statement = categoryId
+		? database.prepare(`${listMenuItemsStatement} WHERE category_id = ? ORDER BY position`)
+		: database.prepare(`${listMenuItemsStatement} ORDER BY position`);
+	const rows = categoryId ? statement.all(categoryId) : statement.all();
+	return rows.map(toPlainObject);
 }
 
 export function findMenuItem(database, itemId) {
-  const row = database.prepare(`
+	const row = database
+		.prepare(
+			`
     ${listMenuItemsStatement}
     WHERE id = ?
-  `).get(itemId);
+  `,
+		)
+		.get(itemId);
 
-  return row ? toPlainObject(row) : null;
+	return row ? toPlainObject(row) : null;
 }

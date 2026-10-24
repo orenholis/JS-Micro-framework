@@ -3,9 +3,7 @@ import { ElementBuilder } from './html.js';
 export const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
 export function svgTag(name) {
-  return (...children) => (
-    new ElementBuilder(name, SVG_NAMESPACE).children(...children)
-  );
+	return (...children) => new ElementBuilder(name, SVG_NAMESPACE).children(...children);
 }
 
 export const svg = svgTag('svg');
