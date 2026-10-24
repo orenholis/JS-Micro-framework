@@ -21,6 +21,13 @@ import {
   value,
 } from '../src/index.js';
 import { categories, menuItems } from './data.js';
+import {
+  addCartItem,
+  changeCartItemQuantity,
+  filterMenuItems,
+  removeCartItem,
+  summarizeCart,
+} from './state.js';
 
 const money = (amount) => `${amount.toLocaleString('cs-CZ')} Kč`;
 
@@ -147,7 +154,7 @@ class KioskApp extends ViewComponent {
     super();
     this.category = this.signal(categories[0].id);
     this.visibleItems = this.signal(
-      menuItems.filter((item) => item.category === categories[0].id),
+      filterMenuItems(menuItems, categories[0].id),
     );
     this.selectedItem = this.signal(null);
     this.cart = this.signal([]);
@@ -156,45 +163,24 @@ class KioskApp extends ViewComponent {
 
   selectCategory(categoryId) {
     this.category.value = categoryId;
-    this.visibleItems.value = menuItems.filter(
-      (item) => item.category === categoryId,
-    );
+    this.visibleItems.value = filterMenuItems(menuItems, categoryId);
   }
 
   addToCart(item) {
-    const existing = this.cart.value.find((row) => row.id === item.id);
-    this.cart.value = existing
-      ? this.cart.value.map((row) => (
-        row.id === item.id
-          ? { ...row, quantity: row.quantity + 1 }
-          : row
-      ))
-      : [...this.cart.value, { ...item, quantity: 1 }];
+    this.cart.value = addCartItem(this.cart.value, item);
     this.selectedItem.value = null;
   }
 
   changeQuantity(itemId, delta) {
-    this.cart.value = this.cart.value
-      .map((row) => (
-        row.id === itemId
-          ? { ...row, quantity: row.quantity + delta }
-          : row
-      ))
-      .filter((row) => row.quantity > 0);
+    this.cart.value = changeCartItemQuantity(this.cart.value, itemId, delta);
   }
 
   removeFromCart(itemId) {
-    this.cart.value = this.cart.value.filter((row) => row.id !== itemId);
+    this.cart.value = removeCartItem(this.cart.value, itemId);
   }
 
   confirmOrder() {
-    this.confirmation.value = {
-      count: this.cart.value.reduce((sum, row) => sum + row.quantity, 0),
-      total: this.cart.value.reduce(
-        (sum, row) => sum + row.price * row.quantity,
-        0,
-      ),
-    };
+    this.confirmation.value = summarizeCart(this.cart.value);
   }
 
   template() {
@@ -209,7 +195,7 @@ class KioskApp extends ViewComponent {
         ).class('brand'),
         span(value(
           this.cart,
-          (rows) => `${rows.reduce((sum, row) => sum + row.quantity, 0)} položek`,
+          (rows) => `${summarizeCart(rows).count} položek`,
         )).class('cart-count').aria('live', 'polite'),
       ).class('topbar'),
 
@@ -283,10 +269,7 @@ class KioskApp extends ViewComponent {
             span('Celkem'),
             strong(value(
               this.cart,
-              (rows) => money(rows.reduce(
-                (sum, row) => sum + row.price * row.quantity,
-                0,
-              )),
+              (rows) => money(summarizeCart(rows).total),
             )).class('total-value'),
           ).class('total-row'),
 

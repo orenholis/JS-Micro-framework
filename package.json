@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "serve": "node tools/server.mjs",
-    "test": "node tests/node-smoke.mjs",
+    "test": "node tests/node-smoke.mjs && node tests/kiosk-state.mjs",
     "size": "npm run build --silent && node tools/size.mjs",
     "verify": "npm test && npm run size"
   },
