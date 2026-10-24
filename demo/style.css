@@ -356,6 +356,20 @@ h2 {
 	margin-bottom: 20px;
 	font-size: 5rem;
 }
+.detail-panel__status {
+	display: grid;
+	min-height: 220px;
+	place-items: center;
+	color: #637068;
+	text-align: center;
+}
+.detail-panel__status--error {
+	gap: 14px;
+	color: #8c3825;
+}
+.detail-panel__status--error p {
+	margin: 0;
+}
 .detail-panel__footer {
 	display: flex;
 	align-items: center;

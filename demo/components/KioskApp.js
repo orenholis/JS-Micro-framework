@@ -19,11 +19,17 @@ export class KioskApp extends ViewComponent {
 			[this.catalogStatus, this.visibleItems],
 			(status, items) => status === 'ready' && items.length === 0,
 		);
-		this.selectedItem = this.signal(null);
+		this.detailItemId = this.signal(null);
+		this.detailItem = this.signal(null);
+		this.detailStatus = this.signal('idle');
+		this.detailError = this.signal('');
 		this.cart = this.signal([]);
 		this.confirmation = this.signal(null);
 		this.catalogRequest = null;
 		this.catalogRequestId = 0;
+		this.detailRequest = null;
+		this.detailRequestId = 0;
+		this.detailTrigger = null;
 	}
 
 	afterMount() {
@@ -32,6 +38,7 @@ export class KioskApp extends ViewComponent {
 
 	beforeDestroy() {
 		this.catalogRequest?.abort();
+		this.detailRequest?.abort();
 	}
 
 	startCatalogRequest() {
@@ -108,9 +115,69 @@ export class KioskApp extends ViewComponent {
 		this.selectCategory(this.category.value);
 	}
 
+	startDetailRequest() {
+		this.detailRequest?.abort();
+		this.detailRequest = new AbortController();
+		this.detailRequestId += 1;
+		this.detailItem.value = null;
+		this.detailStatus.value = 'loading';
+		this.detailError.value = '';
+
+		return { controller: this.detailRequest, requestId: this.detailRequestId };
+	}
+
+	isCurrentDetailRequest(requestId, itemId) {
+		return this.mounted
+			&& requestId === this.detailRequestId
+			&& itemId === this.detailItemId.value;
+	}
+
+	async loadDetail(itemId) {
+		const { controller, requestId } = this.startDetailRequest();
+
+		try {
+			const item = await catalogApi.getMenuItem(itemId, { signal: controller.signal });
+			if (!this.isCurrentDetailRequest(requestId, itemId)) return;
+
+			this.detailItem.value = item;
+			this.detailStatus.value = 'ready';
+		} catch (error) {
+			if (error.name === 'AbortError' || !this.isCurrentDetailRequest(requestId, itemId)) {
+				return;
+			}
+
+			this.detailError.value = error instanceof ApiError
+				? 'Detail produktu se nepodařilo načíst ze serveru.'
+				: 'Při načítání detailu došlo k neočekávané chybě.';
+			this.detailStatus.value = 'error';
+		}
+	}
+
+	openDetail(item) {
+		this.detailTrigger = document.activeElement;
+		this.detailItemId.value = item.id;
+		this.loadDetail(item.id);
+	}
+
+	closeDetail() {
+		this.detailRequest?.abort();
+		this.detailRequestId += 1;
+		this.detailItemId.value = null;
+		this.detailItem.value = null;
+		this.detailStatus.value = 'idle';
+		this.detailError.value = '';
+
+		if (this.detailTrigger?.isConnected) this.detailTrigger.focus();
+		this.detailTrigger = null;
+	}
+
+	retryDetail() {
+		if (this.detailItemId.value !== null) this.loadDetail(this.detailItemId.value);
+	}
+
 	addToCart(item) {
 		this.cart.value = addCartItem(this.cart.value, item);
-		this.selectedItem.value = null;
+		this.closeDetail();
 	}
 
 	changeQuantity(itemId, delta) {
@@ -138,9 +205,7 @@ export class KioskApp extends ViewComponent {
 					items: this.visibleItems,
 					status: this.catalogStatus,
 					onCategorySelect: (categoryId) => this.selectCategory(categoryId),
-					onItemOpen: (item) => {
-						this.selectedItem.value = item;
-					},
+					onItemOpen: (item) => this.openDetail(item),
 					onRetry: () => this.retryCatalog(),
 				}),
 				new CartPanel({
@@ -153,14 +218,15 @@ export class KioskApp extends ViewComponent {
 			).class('layout'),
 
 			show(
-				this.selectedItem,
-				(item) =>
+				this.detailItemId,
+				() =>
 					new DetailPanel({
-						item,
+						error: this.detailError,
+						item: this.detailItem,
+						status: this.detailStatus,
 						onAdd: (selected) => this.addToCart(selected),
-						onClose: () => {
-							this.selectedItem.value = null;
-						},
+						onClose: () => this.closeDetail(),
+						onRetry: () => this.retryDetail(),
 					}),
 			),
 

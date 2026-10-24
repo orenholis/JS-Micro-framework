@@ -43,6 +43,19 @@ await test('klient bezpečně zakóduje filtr kategorie', async () => {
 	assert.equal(requestedUrl, '/api/menu-items?category=hot+drinks');
 });
 
+await test('klient načte detail zvoleného produktu', async () => {
+	let requestedUrl;
+	const api = createCatalogApi(async (url) => {
+		requestedUrl = url;
+		return jsonResponse({ id: 8, name: 'Espresso' });
+	});
+
+	const item = await api.getMenuItem(8);
+
+	assert.equal(requestedUrl, '/api/menu-items/8');
+	assert.deepEqual(item, { id: 8, name: 'Espresso' });
+});
+
 await test('chybná odpověď serveru vytvoří ApiError', async () => {
 	const api = createCatalogApi(async () => jsonResponse({ error: 'Unavailable' }, 503));
 

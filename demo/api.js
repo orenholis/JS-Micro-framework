@@ -29,6 +29,10 @@ export function createCatalogApi(fetchImplementation = fetch) {
 			const query = new URLSearchParams({ category: categoryId });
 			return get(`/api/menu-items?${query}`, options.signal);
 		},
+
+		getMenuItem(itemId, options = {}) {
+			return get(`/api/menu-items/${encodeURIComponent(itemId)}`, options.signal);
+		},
 	});
 }
 
