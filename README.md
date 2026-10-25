@@ -118,6 +118,11 @@ uloží v jedné databázové transakci.
 npm run verify
 ```
 
+Součástí příkazu je také integrační scénář kiosku. Projde změnu kategorie,
+detail produktu včetně klávesy Escape a návratu fokusu, práci s košíkem,
+zachování identity jeho řádku, potvrzení objednávky a uvolnění reaktivních
+odběrů po odstranění aplikace.
+
 Zdrojové soubory používají pro odsazení skutečné tabulátory. Víceřádkové
 destrukturování objektů linter nepovoluje. Formátování lze sjednotit příkazem
 `npm run format` a samostatně zkontrolovat příkazem `npm run lint`; stejná

@@ -8,8 +8,9 @@ import { DetailPanel } from './DetailPanel.js';
 import { TopBar } from './TopBar.js';
 
 export class KioskApp extends ViewComponent {
-	constructor() {
+	constructor({ api = catalogApi } = {}) {
 		super();
+		this.api = api;
 		this.categories = this.signal([]);
 		this.category = this.signal(null);
 		this.visibleItems = this.signal([]);
@@ -75,7 +76,7 @@ export class KioskApp extends ViewComponent {
 		const { controller, requestId } = this.startCatalogRequest();
 
 		try {
-			const categories = await catalogApi.listCategories({ signal: controller.signal });
+			const categories = await this.api.listCategories({ signal: controller.signal });
 			if (!this.isCurrentCatalogRequest(requestId)) return;
 
 			if (categories.length === 0) {
@@ -84,7 +85,7 @@ export class KioskApp extends ViewComponent {
 
 			this.categories.value = categories;
 			this.category.value = categories[0].id;
-			const items = await catalogApi.listMenuItems(categories[0].id, {
+			const items = await this.api.listMenuItems(categories[0].id, {
 				signal: controller.signal,
 			});
 			if (!this.isCurrentCatalogRequest(requestId)) return;
@@ -101,7 +102,7 @@ export class KioskApp extends ViewComponent {
 		const { controller, requestId } = this.startCatalogRequest();
 
 		try {
-			const items = await catalogApi.listMenuItems(categoryId, {
+			const items = await this.api.listMenuItems(categoryId, {
 				signal: controller.signal,
 			});
 			if (!this.isCurrentCatalogRequest(requestId)) return;
@@ -143,7 +144,7 @@ export class KioskApp extends ViewComponent {
 		const { controller, requestId } = this.startDetailRequest();
 
 		try {
-			const item = await catalogApi.getMenuItem(itemId, { signal: controller.signal });
+			const item = await this.api.getMenuItem(itemId, { signal: controller.signal });
 			if (!this.isCurrentDetailRequest(requestId, itemId)) return;
 
 			this.detailItem.value = item;
@@ -220,7 +221,7 @@ export class KioskApp extends ViewComponent {
 		this.orderError.value = '';
 
 		try {
-			const order = await catalogApi.createOrder(submittedCart, {
+			const order = await this.api.createOrder(submittedCart, {
 				signal: this.orderRequest.signal,
 			});
 			if (!this.mounted || requestId !== this.orderRequestId) return;
