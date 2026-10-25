@@ -1,9 +1,10 @@
 import { ViewComponent, button, div, each, h1, nav, p, section, span, value } from '../../src/index.js';
 import { MenuItem } from './MenuItem.js';
+import { PromoBanner } from './PromoBanner.js';
 
 export class Catalog extends ViewComponent {
 	template() {
-		const { categories, category, empty, error, items, onCategorySelect, onItemOpen, onRetry, status, titleRef } = this.props;
+		const { categories, category, empty, error, items, onBuildMenu, onCategorySelect, onItemOpen, onRetry, status, titleRef } = this.props;
 
 		return section(
 			div(
@@ -18,6 +19,8 @@ export class Catalog extends ViewComponent {
 					'section-heading__copy',
 				),
 			).class('section-heading'),
+
+			new PromoBanner({ onBuild: onBuildMenu }),
 
 			nav(
 				each(categories, {

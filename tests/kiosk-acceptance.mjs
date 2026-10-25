@@ -254,12 +254,14 @@ findButton(app.root, 'Přidat do objednávky').click();
 assert.equal(app.cartSummary.value.count, 1);
 assert.equal(app.cartSummary.value.total, 49);
 
+findButton(app.root, 'Zobrazit objednávku').click();
 const colaRow = findCartRow(app.root, 'Cola');
 findButton(app.root, 'Zvýšit množství: Cola').click();
 assert.equal(app.cartSummary.value.count, 2);
 assert.equal(app.cartSummary.value.total, 98);
 assert.equal(findCartRow(app.root, 'Cola'), colaRow, 'Řádek košíku ztratil identitu.');
 
+findButton(app.root, '← Zpět k nabídce').click();
 findButton(app.root, 'Doporučujeme').click();
 await settle();
 findProduct(app.root, 'Double Smash').click();
@@ -268,13 +270,20 @@ findButton(app.root, 'Přidat do objednávky').click();
 assert.equal(app.cartSummary.value.count, 3);
 assert.equal(app.cartSummary.value.total, 287);
 
+findButton(app.root, 'Zobrazit objednávku').click();
 findButton(app.root, 'Odebrat z objednávky: Cola').click();
 assert.equal(app.cartSummary.value.count, 1);
 assert.equal(app.cartSummary.value.total, 189);
 
-findButton(app.root, 'Potvrdit objednávku').click();
+findButton(app.root, 'Pokračovat').click();
+findButton(app.root, 'Přidat: Karamelový sundae').click();
+assert.equal(app.cartSummary.value.count, 2);
+assert.equal(app.cartSummary.value.total, 258);
+findButton(app.root, 'Pokračovat k dokončení').click();
+findButton(app.root, 'Pokračovat k platbě').click();
+findButton(app.root, 'Dokončit objednávku').click();
 await settle();
-assert.deepEqual(createdOrders, [[{ id: 1, quantity: 1 }]]);
+assert.deepEqual(createdOrders, [[{ id: 1, quantity: 1 }, { id: 16, quantity: 1 }]]);
 assert.ok(app.root.textContent.includes('Číslo objednávky: 41'));
 assert.equal(document.activeElement.textContent, 'Nová objednávka');
 document.dispatchEvent(keyboardEvent('Tab'));
@@ -284,6 +293,18 @@ findButton(app.root, 'Nová objednávka').click();
 assert.equal(app.confirmation.value, null);
 assert.deepEqual(app.cart.value, []);
 assert.equal(document.activeElement.getAttribute('id'), 'menu-title');
+
+findButton(app.root, 'Sestavit menu').click();
+findButton(app.root, 'Vybrat: Double Smash').click();
+findButton(app.root, 'Pokračovat').click();
+findButton(app.root, 'Vybrat: Hranolky').click();
+findButton(app.root, 'Pokračovat').click();
+findButton(app.root, 'Vybrat: Cola').click();
+findButton(app.root, 'Pokračovat').click();
+findButton(app.root, 'Vybrat: Kečup').click();
+findButton(app.root, 'Přidat menu do objednávky').click();
+assert.deepEqual(app.cart.value.map((item) => item.id), [1, 9, 13, 12]);
+assert.equal(app.cartSummary.value.count, 4);
 
 app.destroy();
 assert.equal(app.cart.subscriberCount, 0);

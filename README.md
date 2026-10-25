@@ -105,6 +105,11 @@ Demonstrační aplikace používá vlastní značku BITE a realistický katalog 
 lokálně v jednom obrazovém atlasu, takže kiosk za běhu nestahuje externí
 obrázky ani jiná data.
 
+Objednávkový průchod odpovídá samoobslužnému kiosku: katalog doplňuje spodní
+souhrnná lišta, samostatná obrazovka objednávky, nabídka doplňkových produktů,
+volba konzumace na místě nebo s sebou a platební krok. Časově omezená nabídka
+otevírá čtyřkrokové sestavení menu z burgeru, přílohy, nápoje a omáčky.
+
 Poté lze otevřít:
 
 - kiosk: `http://127.0.0.1:4173/demo/`

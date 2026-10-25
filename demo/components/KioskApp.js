@@ -1,11 +1,15 @@
 import { ViewComponent, div, main, show } from '../../src/index.js';
 import { ApiError, catalogApi } from '../api.js';
 import { addCartItem, changeCartItemQuantity, clearCart, removeCartItem, summarizeCart } from '../state.js';
-import { CartPanel } from './CartPanel.js';
 import { Catalog } from './Catalog.js';
+import { CheckoutScreen } from './CheckoutScreen.js';
 import { Confirmation } from './Confirmation.js';
 import { DetailPanel } from './DetailPanel.js';
+import { MenuBuilder } from './MenuBuilder.js';
+import { OrderDock } from './OrderDock.js';
+import { OrderScreen } from './OrderScreen.js';
 import { TopBar } from './TopBar.js';
+import { UpsellScreen } from './UpsellScreen.js';
 
 export class KioskApp extends ViewComponent {
 	constructor({ api = catalogApi } = {}) {
@@ -26,6 +30,13 @@ export class KioskApp extends ViewComponent {
 		this.detailError = this.signal('');
 		this.cart = this.signal([]);
 		this.cartSummary = this.computed(this.cart, summarizeCart);
+		this.screen = this.signal('catalog');
+		this.builderOpen = this.signal(false);
+		this.orderVisible = this.computed(this.screen, (screen) => screen === 'order');
+		this.upsellVisible = this.computed(this.screen, (screen) => screen === 'upsell');
+		this.checkoutVisible = this.computed(this.screen, (screen) => screen === 'checkout');
+		this.orderType = this.signal('eat-in');
+		this.payment = this.signal('card');
 		this.orderStatus = this.signal('idle');
 		this.orderError = this.signal('');
 		this.orderPending = this.computed(this.orderStatus, (status) => status === 'submitting');
@@ -210,6 +221,16 @@ export class KioskApp extends ViewComponent {
 		this.orderError.value = '';
 	}
 
+	addMenuToCart(items) {
+		this.clearOrderError();
+		this.cart.value = items.reduce((cart, item) => addCartItem(cart, item), this.cart.value);
+		this.builderOpen.value = false;
+	}
+
+	showScreen(screen) {
+		this.screen.value = screen;
+	}
+
 	async confirmOrder() {
 		if (this.cart.value.length === 0 || this.orderPending.value) return;
 
@@ -229,6 +250,7 @@ export class KioskApp extends ViewComponent {
 
 			this.cart.value = [];
 			this.orderStatus.value = 'idle';
+			this.screen.value = 'catalog';
 			this.confirmation.value = order;
 		} catch (error) {
 			if (error.name === 'AbortError' || !this.mounted || requestId !== this.orderRequestId) {
@@ -244,7 +266,7 @@ export class KioskApp extends ViewComponent {
 
 	template() {
 		return main(
-			new TopBar({ summary: this.cartSummary }),
+			new TopBar(),
 
 			div(
 				new Catalog({
@@ -258,21 +280,71 @@ export class KioskApp extends ViewComponent {
 						this.catalogTitle = node;
 					},
 					onCategorySelect: (categoryId) => this.selectCategory(categoryId),
+					onBuildMenu: () => {
+						this.builderOpen.value = true;
+					},
 					onItemOpen: (item) => this.openDetail(item),
 					onRetry: () => this.retryCatalog(),
 				}),
-				new CartPanel({
+			).class('layout'),
+
+			new OrderDock({
+				summary: this.cartSummary,
+				onOpen: () => this.showScreen('order'),
+			}),
+
+			show(
+				this.builderOpen,
+				() => new MenuBuilder({
+					onClose: () => {
+						this.builderOpen.value = false;
+					},
+					onComplete: (items) => this.addMenuToCart(items),
+				}),
+			),
+
+			show(
+				this.orderVisible,
+				() => new OrderScreen({
 					cart: this.cart,
-					summary: this.cartSummary,
 					error: this.orderError,
 					pending: this.orderPending,
+					summary: this.cartSummary,
+					onBack: () => this.showScreen('catalog'),
 					onClear: () => this.clearCart(),
+					onContinue: () => this.showScreen('upsell'),
 					onIncrease: (itemId) => this.changeQuantity(itemId, 1),
 					onDecrease: (itemId) => this.changeQuantity(itemId, -1),
 					onRemove: (itemId) => this.removeFromCart(itemId),
-					onConfirm: () => this.confirmOrder(),
 				}),
-			).class('layout'),
+			),
+
+			show(
+				this.upsellVisible,
+				() => new UpsellScreen({
+					onAdd: (item) => this.addToCart(item),
+					onBack: () => this.showScreen('order'),
+					onContinue: () => this.showScreen('checkout'),
+				}),
+			),
+
+			show(
+				this.checkoutVisible,
+				() => new CheckoutScreen({
+					onBack: () => this.showScreen('upsell'),
+					onConfirm: () => this.confirmOrder(),
+					onOrderType: (type) => {
+						this.orderType.value = type;
+					},
+					onPayment: (method) => {
+						this.payment.value = method;
+					},
+					orderType: this.orderType,
+					payment: this.payment,
+					pending: this.orderPending,
+					summary: this.cartSummary,
+				}),
+			),
 
 			show(
 				this.detailItemId,

@@ -20,8 +20,8 @@ export class CartPanel extends ViewComponent {
 		return aside(
 			div(
 				div(
-					p('Vaše objednávka').class('eyebrow'),
-					h2('Přehled').id('cart-title').attr('tabindex', '-1').ref('title'),
+					p(value(summary, (current) => formatItemCount(current.count))).class('eyebrow'),
+					h2('Přehled položek').id('cart-title').attr('tabindex', '-1').ref('title'),
 				),
 				button('Vyprázdnit')
 					.class('clear-cart-button')
@@ -70,7 +70,7 @@ export class CartPanel extends ViewComponent {
 				.prop('hidden', value(error, (message) => message.length === 0))
 				.attr('role', 'alert'),
 
-			button(value(pending, (isPending) => (isPending ? 'Ukládám objednávku…' : 'Potvrdit objednávku')))
+			button(value(pending, (isPending) => (isPending ? 'Čekejte prosím…' : 'Pokračovat')))
 				.class('primary-button', 'primary-button--wide')
 				.prop('type', 'button')
 				.prop(
