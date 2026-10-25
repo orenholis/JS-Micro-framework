@@ -63,12 +63,32 @@ function reportDistribution(label, files) {
 	console.log(`  minified:   ${content.length} B`);
 	console.log(`  gzip:       ${gzipSync(content, { level: 9 }).length} B`);
 	console.log(`  brotli:     ${brotliCompressSync(content).length} B`);
+	return content.length;
 }
 
 const core = collect('src/index.js');
 const svg = collect('src/svg.js');
-reportDistribution('V0 core distribution', core);
+const coreSize = reportDistribution('V0 core distribution', core);
 reportDistribution(
 	'V0 optional SVG addition',
 	svg.filter((file) => !core.includes(file)),
 );
+
+if (coreSize > 10_000) {
+	throw new Error(`V0 core exceeds the 10 kB limit: ${coreSize} B.`);
+}
+
+const sourceDistribution = await import(new URL('../dist/modules/index.js', import.meta.url));
+const minifiedDistribution = await import(new URL(`../${core[0]}`, import.meta.url));
+
+for (const distribution of [sourceDistribution, minifiedDistribution]) {
+	if (
+		typeof distribution.mount !== 'function'
+		|| typeof distribution.state !== 'function'
+		|| typeof distribution.ViewComponent !== 'function'
+	) {
+		throw new Error('Distribution does not expose the required V0 API.');
+	}
+}
+
+console.log('\nV0 size limit and both distribution formats verified.');

@@ -3,13 +3,16 @@ import { MenuItem } from './MenuItem.js';
 
 export class Catalog extends ViewComponent {
 	template() {
-		const { categories, category, empty, error, items, onCategorySelect, onItemOpen, onRetry, status } = this.props;
+		const { categories, category, empty, error, items, onCategorySelect, onItemOpen, onRetry, status, titleRef } = this.props;
 
 		return section(
 			div(
 				div(
 					p('Objednávkový kiosk').class('eyebrow'),
-					h1('Vyberte si z nabídky').id('menu-title'),
+					h1('Vyberte si z nabídky')
+						.id('menu-title')
+						.attr('tabindex', '-1')
+						.ref(titleRef),
 				),
 				p('Ukázka cílených DOM aktualizací bez virtuálního stromu.').class(
 					'section-heading__copy',

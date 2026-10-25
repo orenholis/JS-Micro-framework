@@ -1,4 +1,5 @@
 import { ViewComponent, button, div, h2, p, section } from '../../src/index.js';
+import { trapTabKey } from '../focus.js';
 import { formatItemCount, money } from '../format.js';
 
 export class Confirmation extends ViewComponent {
@@ -8,7 +9,7 @@ export class Confirmation extends ViewComponent {
 		return div(
 			section(
 				div('✓').class('confirmation__icon').aria('hidden', 'true'),
-				h2('Objednávka přijata'),
+				h2('Objednávka přijata').id('confirmation-title'),
 				p(`Číslo objednávky: ${order.id}`).class('confirmation__order-number'),
 				p(`${formatItemCount(order.count)} v hodnotě ${money(order.total)}.`),
 				button('Nová objednávka')
@@ -19,11 +20,15 @@ export class Confirmation extends ViewComponent {
 			)
 				.class('confirmation')
 				.attr('role', 'dialog')
-				.aria('modal', 'true'),
+				.aria('modal', 'true')
+				.aria('labelledby', 'confirmation-title'),
 		).class('overlay', 'overlay--confirmation');
 	}
 
 	afterMount() {
 		this.refs.reset.focus();
+		this.listen(document, 'keydown', (event) => {
+			trapTabKey(event, [this.refs.reset]);
+		});
 	}
 }

@@ -1,4 +1,5 @@
 import { ViewComponent, button, div, h2, p, section, span, strong, value } from '../../src/index.js';
+import { trapTabKey } from '../focus.js';
 import { money } from '../format.js';
 
 export class DetailPanel extends ViewComponent {
@@ -43,6 +44,7 @@ export class DetailPanel extends ViewComponent {
 						button('Přidat do objednávky')
 							.class('primary-button')
 							.prop('type', 'button')
+							.ref('add')
 							.on('click', () => onAdd(item.value)),
 					).class('detail-panel__footer'),
 				)
@@ -70,7 +72,15 @@ export class DetailPanel extends ViewComponent {
 			}
 		}, { immediate: false }));
 		this.listen(document, 'keydown', (event) => {
-			if (event.key === 'Escape') this.props.onClose();
+			if (event.key === 'Escape') {
+				this.props.onClose();
+				return;
+			}
+
+			const action = this.props.status.value === 'error'
+				? this.refs.retry
+				: this.props.status.value === 'ready' ? this.refs.add : null;
+			trapTabKey(event, [this.refs.close, action]);
 		});
 	}
 }

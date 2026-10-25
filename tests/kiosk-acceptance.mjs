@@ -146,6 +146,7 @@ globalThis.DocumentFragment = TestFragment;
 globalThis.document = new TestDocument();
 
 const { menuItems, categories } = await import('../demo/data.js');
+const { ApiError } = await import('../demo/api.js');
 const { KioskApp } = await import('../demo/components/KioskApp.js');
 const { mount } = await import('../src/index.js');
 
@@ -178,6 +179,19 @@ function findCartRow(root, name) {
 	return descendants(root).find((node) =>
 		node.nodeName === 'ARTICLE' && node.textContent.includes(name),
 	);
+}
+
+function keyboardEvent(key, shiftKey = false) {
+	const event = new Event('keydown', { cancelable: true });
+	Object.defineProperties(event, {
+		key: { value: key },
+		shiftKey: { value: shiftKey },
+	});
+	return event;
+}
+
+function findParagraph(root, text) {
+	return descendants(root).find((node) => node.nodeName === 'P' && node.textContent === text);
 }
 
 async function settle() {
@@ -220,13 +234,17 @@ assert.deepEqual(app.visibleItems.value.map((item) => item.name), ['Espresso', '
 const espressoTrigger = findProduct(app.root, 'Espresso');
 espressoTrigger.focus();
 espressoTrigger.click();
+document.dispatchEvent(keyboardEvent('Tab'));
+assert.equal(document.activeElement.getAttribute('aria-label'), 'Zavřít detail');
 await settle();
 assert.equal(app.detailItem.value.name, 'Espresso');
 assert.equal(document.activeElement.getAttribute('aria-label'), 'Zavřít detail');
 
-const escape = new Event('keydown');
-Object.defineProperty(escape, 'key', { value: 'Escape' });
-document.dispatchEvent(escape);
+document.dispatchEvent(keyboardEvent('Tab'));
+assert.equal(document.activeElement.textContent, 'Přidat do objednávky');
+document.dispatchEvent(keyboardEvent('Tab', true));
+assert.equal(document.activeElement.getAttribute('aria-label'), 'Zavřít detail');
+document.dispatchEvent(keyboardEvent('Escape'));
 assert.equal(app.detailItemId.value, null);
 assert.equal(document.activeElement, espressoTrigger);
 
@@ -259,10 +277,13 @@ await settle();
 assert.deepEqual(createdOrders, [[{ id: 1, quantity: 1 }]]);
 assert.ok(app.root.textContent.includes('Číslo objednávky: 41'));
 assert.equal(document.activeElement.textContent, 'Nová objednávka');
+document.dispatchEvent(keyboardEvent('Tab'));
+assert.equal(document.activeElement.textContent, 'Nová objednávka');
 
 findButton(app.root, 'Nová objednávka').click();
 assert.equal(app.confirmation.value, null);
 assert.deepEqual(app.cart.value, []);
+assert.equal(document.activeElement.getAttribute('id'), 'menu-title');
 
 app.destroy();
 assert.equal(app.cart.subscriberCount, 0);
@@ -271,4 +292,42 @@ assert.equal(app.confirmation.subscriberCount, 0);
 assert.equal(host.childNodes.length, 0);
 
 console.log('✓ kompletní scénář kiosku včetně klávesnice, identity řádků a cleanupu');
-console.log('\n1 integrační scénář kiosku prošel.');
+
+const emptyHost = document.createElement('div');
+document.append(emptyHost);
+const emptyApp = mount(new KioskApp({
+	api: {
+		async listCategories() {
+			return [{ id: 'empty', name: 'Prázdná kategorie' }];
+		},
+		async listMenuItems() {
+			return [];
+		},
+	},
+}), emptyHost);
+await settle();
+assert.equal(emptyApp.catalogStatus.value, 'ready');
+assert.equal(emptyApp.catalogEmpty.value, true);
+assert.equal(findParagraph(emptyApp.root, 'V této kategorii zatím nejsou žádné položky.').hidden, false);
+emptyApp.destroy();
+console.log('✓ prázdná kategorie zobrazí samostatný stav');
+
+const errorHost = document.createElement('div');
+document.append(errorHost);
+const errorApp = mount(new KioskApp({
+	api: {
+		async listCategories() {
+			throw new ApiError('Unavailable', 503);
+		},
+	},
+}), errorHost);
+await settle();
+assert.equal(errorApp.catalogStatus.value, 'error');
+assert.equal(
+	findParagraph(errorApp.root, 'Katalog se nepodařilo načíst ze serveru.').hidden,
+	false,
+);
+errorApp.destroy();
+console.log('✓ chyba katalogu zobrazí srozumitelný chybový stav');
+
+console.log('\n3 integrační scénáře kiosku prošly.');

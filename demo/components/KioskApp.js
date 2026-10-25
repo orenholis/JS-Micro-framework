@@ -37,6 +37,7 @@ export class KioskApp extends ViewComponent {
 		this.detailTrigger = null;
 		this.orderRequest = null;
 		this.orderRequestId = 0;
+		this.catalogTitle = null;
 	}
 
 	afterMount() {
@@ -253,6 +254,9 @@ export class KioskApp extends ViewComponent {
 					error: this.catalogError,
 					items: this.visibleItems,
 					status: this.catalogStatus,
+					titleRef: (node) => {
+						this.catalogTitle = node;
+					},
 					onCategorySelect: (categoryId) => this.selectCategory(categoryId),
 					onItemOpen: (item) => this.openDetail(item),
 					onRetry: () => this.retryCatalog(),
@@ -290,6 +294,7 @@ export class KioskApp extends ViewComponent {
 						order,
 						onReset: () => {
 							this.confirmation.value = null;
+							this.catalogTitle?.focus();
 						},
 					}),
 			),

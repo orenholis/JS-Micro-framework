@@ -182,6 +182,19 @@ try {
 		assert.match(html, /Constrained UI/);
 	});
 
+	await test('kiosk lze spustit přímo ze zdrojových ES modulů', async () => {
+		const applicationResponse = await fetch(`${baseUrl}/demo/app.js`);
+		const frameworkResponse = await fetch(`${baseUrl}/src/index.js`);
+		const application = await applicationResponse.text();
+		const framework = await frameworkResponse.text();
+
+		assert.equal(applicationResponse.status, 200);
+		assert.match(applicationResponse.headers.get('content-type'), /text\/javascript/);
+		assert.match(application, /from '\.\.\/src\/index\.js'/);
+		assert.equal(frameworkResponse.status, 200);
+		assert.match(framework, /export \{ Component, Scope, mount \}/);
+	});
+
 	await test('server nezpřístupní databázi jako statický soubor', async () => {
 		const response = await fetch(`${baseUrl}/.data/kiosk.sqlite`);
 

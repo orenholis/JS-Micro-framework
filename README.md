@@ -136,7 +136,12 @@ kontrola je součástí `npm run verify`.
 
 Aktuální V0 má 9 790 B minifikovaného jádra (3 750 B gzip, 3 361 B brotli).
 Volitelný SVG vstup přidává 443 B před kompresí. Hodnoty reprodukuje
-`npm run size`.
+`npm run size`; příkaz současně selže při překročení limitu 10 kB a ověří
+veřejné API čitelné i minifikované distribuce.
+
+Kiosk je dokončený ve verzi V0. Podporuje zobrazení od šířky 320 px, omezení
+animací podle nastavení uživatele, klávesové ovládání dialogů s uzavřeným
+fokusem a návrat fokusu do nabídky po dokončení objednávky.
 
 ## Pokrytí požadavků
 
