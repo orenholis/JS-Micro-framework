@@ -15,7 +15,7 @@ import { CartRow } from './CartRow.js';
 
 export class CartPanel extends ViewComponent {
 	template() {
-		const { cart, onClear, onConfirm, onDecrease, onIncrease, onRemove, summary } = this.props;
+		const { cart, error, onClear, onConfirm, onDecrease, onIncrease, onRemove, pending, summary } = this.props;
 
 		return aside(
 			div(
@@ -27,6 +27,7 @@ export class CartPanel extends ViewComponent {
 					.class('clear-cart-button')
 					.prop('type', 'button')
 					.prop('hidden', value(summary, (current) => current.count === 0))
+					.prop('disabled', value(pending))
 					.aria('label', 'Vyprázdnit objednávku')
 					.on('click', () => {
 						onClear();
@@ -53,7 +54,7 @@ export class CartPanel extends ViewComponent {
 			div(
 				each(cart, {
 					key: (row) => row.id,
-					render: (row) => new CartRow({ row, onIncrease, onDecrease, onRemove }),
+					render: (row) => new CartRow({ row, pending, onIncrease, onDecrease, onRemove }),
 				}),
 			).class('cart-rows'),
 
@@ -64,12 +65,17 @@ export class CartPanel extends ViewComponent {
 				),
 			).class('total-row'),
 
-			button('Potvrdit objednávku')
+			p(value(error))
+				.class('order-error')
+				.prop('hidden', value(error, (message) => message.length === 0))
+				.attr('role', 'alert'),
+
+			button(value(pending, (isPending) => (isPending ? 'Ukládám objednávku…' : 'Potvrdit objednávku')))
 				.class('primary-button', 'primary-button--wide')
 				.prop('type', 'button')
 				.prop(
 					'disabled',
-					value(summary, (current) => current.count === 0),
+					value(this.computed([summary, pending], (current, isPending) => current.count === 0 || isPending)),
 				)
 				.on('click', onConfirm),
 		)

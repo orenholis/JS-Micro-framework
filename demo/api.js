@@ -7,9 +7,15 @@ export class ApiError extends Error {
 }
 
 export function createCatalogApi(fetchImplementation = fetch) {
-	async function get(path, signal) {
+	async function request(path, { body, method = 'GET', signal } = {}) {
+		const headers = { Accept: 'application/json' };
+
+		if (body !== undefined) headers['Content-Type'] = 'application/json';
+
 		const response = await fetchImplementation(path, {
-			headers: { Accept: 'application/json' },
+			body: body === undefined ? undefined : JSON.stringify(body),
+			headers,
+			method,
 			signal,
 		});
 
@@ -22,16 +28,29 @@ export function createCatalogApi(fetchImplementation = fetch) {
 
 	return Object.freeze({
 		listCategories(options = {}) {
-			return get('/api/categories', options.signal);
+			return request('/api/categories', options);
 		},
 
 		listMenuItems(categoryId, options = {}) {
 			const query = new URLSearchParams({ category: categoryId });
-			return get(`/api/menu-items?${query}`, options.signal);
+			return request(`/api/menu-items?${query}`, options);
 		},
 
 		getMenuItem(itemId, options = {}) {
-			return get(`/api/menu-items/${encodeURIComponent(itemId)}`, options.signal);
+			return request(`/api/menu-items/${encodeURIComponent(itemId)}`, options);
+		},
+
+		createOrder(cart, options = {}) {
+			return request('/api/orders', {
+				body: {
+					items: cart.map((item) => ({
+						menuItemId: item.id,
+						quantity: item.quantity,
+					})),
+				},
+				method: 'POST',
+				signal: options.signal,
+			});
 		},
 	});
 }

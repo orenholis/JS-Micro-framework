@@ -25,12 +25,17 @@ export class KioskApp extends ViewComponent {
 		this.detailError = this.signal('');
 		this.cart = this.signal([]);
 		this.cartSummary = this.computed(this.cart, summarizeCart);
+		this.orderStatus = this.signal('idle');
+		this.orderError = this.signal('');
+		this.orderPending = this.computed(this.orderStatus, (status) => status === 'submitting');
 		this.confirmation = this.signal(null);
 		this.catalogRequest = null;
 		this.catalogRequestId = 0;
 		this.detailRequest = null;
 		this.detailRequestId = 0;
 		this.detailTrigger = null;
+		this.orderRequest = null;
+		this.orderRequestId = 0;
 	}
 
 	afterMount() {
@@ -40,6 +45,7 @@ export class KioskApp extends ViewComponent {
 	beforeDestroy() {
 		this.catalogRequest?.abort();
 		this.detailRequest?.abort();
+		this.orderRequest?.abort();
 	}
 
 	startCatalogRequest() {
@@ -177,24 +183,61 @@ export class KioskApp extends ViewComponent {
 	}
 
 	addToCart(item) {
+		this.clearOrderError();
 		this.cart.value = addCartItem(this.cart.value, item);
 		this.closeDetail();
 	}
 
 	changeQuantity(itemId, delta) {
+		this.clearOrderError();
 		this.cart.value = changeCartItemQuantity(this.cart.value, itemId, delta);
 	}
 
 	removeFromCart(itemId) {
+		this.clearOrderError();
 		this.cart.value = removeCartItem(this.cart.value, itemId);
 	}
 
 	clearCart() {
+		this.clearOrderError();
 		this.cart.value = clearCart(this.cart.value);
 	}
 
-	confirmOrder() {
-		this.confirmation.value = this.cartSummary.value;
+	clearOrderError() {
+		if (this.orderStatus.value === 'error') this.orderStatus.value = 'idle';
+		this.orderError.value = '';
+	}
+
+	async confirmOrder() {
+		if (this.cart.value.length === 0 || this.orderPending.value) return;
+
+		this.orderRequest?.abort();
+		this.orderRequest = new AbortController();
+		this.orderRequestId += 1;
+		const requestId = this.orderRequestId;
+		const submittedCart = this.cart.value;
+		this.orderStatus.value = 'submitting';
+		this.orderError.value = '';
+
+		try {
+			const order = await catalogApi.createOrder(submittedCart, {
+				signal: this.orderRequest.signal,
+			});
+			if (!this.mounted || requestId !== this.orderRequestId) return;
+
+			this.cart.value = [];
+			this.orderStatus.value = 'idle';
+			this.confirmation.value = order;
+		} catch (error) {
+			if (error.name === 'AbortError' || !this.mounted || requestId !== this.orderRequestId) {
+				return;
+			}
+
+			this.orderError.value = error instanceof ApiError
+				? 'Objednávku se nepodařilo uložit. Zkuste to prosím znovu.'
+				: 'Při ukládání objednávky došlo k neočekávané chybě.';
+			this.orderStatus.value = 'error';
+		}
 	}
 
 	template() {
@@ -216,6 +259,8 @@ export class KioskApp extends ViewComponent {
 				new CartPanel({
 					cart: this.cart,
 					summary: this.cartSummary,
+					error: this.orderError,
+					pending: this.orderPending,
 					onClear: () => this.clearCart(),
 					onIncrease: (itemId) => this.changeQuantity(itemId, 1),
 					onDecrease: (itemId) => this.changeQuantity(itemId, -1),
@@ -239,11 +284,10 @@ export class KioskApp extends ViewComponent {
 
 			show(
 				this.confirmation,
-				(summary) =>
+				(order) =>
 					new Confirmation({
-						summary,
+						order,
 						onReset: () => {
-							this.cart.value = [];
 							this.confirmation.value = null;
 						},
 					}),

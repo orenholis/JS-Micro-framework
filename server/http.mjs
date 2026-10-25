@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import { extname, relative, resolve, sep } from 'node:path';
 import { findMenuItem, listCategories, listMenuItems } from './catalog.mjs';
 import { openKioskDatabase } from './database.mjs';
+import { createOrder, OrderValidationError } from './orders.mjs';
 
 const contentTypes = {
 	'.css': 'text/css; charset=utf-8',
@@ -12,6 +13,14 @@ const contentTypes = {
 	'.mjs': 'text/javascript; charset=utf-8',
 };
 const publicDirectories = new Set(['demo', 'dist', 'src', 'tests']);
+const maximumRequestSize = 16 * 1024;
+
+class RequestError extends Error {
+	constructor(message, status) {
+		super(message);
+		this.status = status;
+	}
+}
 
 function sendJson(response, status, body) {
 	response.writeHead(status, {
@@ -21,7 +30,60 @@ function sendJson(response, status, body) {
 	response.end(JSON.stringify(body));
 }
 
-function handleApi(request, response, url, database) {
+async function readJson(request) {
+	const declaredSize = Number(request.headers['content-length'] ?? 0);
+
+	if (declaredSize > maximumRequestSize) {
+		throw new RequestError('Request body is too large', 413);
+	}
+
+	const chunks = [];
+	let receivedSize = 0;
+
+	for await (const chunk of request) {
+		receivedSize += chunk.length;
+
+		if (receivedSize > maximumRequestSize) {
+			throw new RequestError('Request body is too large', 413);
+		}
+
+		chunks.push(chunk);
+	}
+
+	try {
+		return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+	} catch {
+		throw new RequestError('Request body must be valid JSON', 400);
+	}
+}
+
+async function handleApi(request, response, url, database) {
+	if (url.pathname === '/api/orders') {
+		if (request.method !== 'POST') {
+			sendJson(response, 405, { error: 'Method not allowed' });
+			return;
+		}
+
+		try {
+			const order = createOrder(database, await readJson(request));
+			sendJson(response, 201, order);
+		} catch (error) {
+			if (error instanceof RequestError) {
+				sendJson(response, error.status, { error: error.message });
+				return;
+			}
+
+			if (error instanceof OrderValidationError) {
+				sendJson(response, 400, { error: error.message });
+				return;
+			}
+
+			throw error;
+		}
+
+		return;
+	}
+
 	if (request.method !== 'GET') {
 		sendJson(response, 405, { error: 'Method not allowed' });
 		return;
@@ -85,12 +147,12 @@ function sendStatic(response, url, root) {
 
 export async function createKioskServer({ root, databasePath }) {
 	const database = await openKioskDatabase(databasePath);
-	const server = createServer((request, response) => {
+	const server = createServer(async (request, response) => {
 		try {
 			const url = new URL(request.url, `http://${request.headers.host}`);
 
 			if (url.pathname.startsWith('/api/')) {
-				handleApi(request, response, url, database);
+				await handleApi(request, response, url, database);
 			} else {
 				sendStatic(response, url, root);
 			}

@@ -12,7 +12,7 @@ import { money } from '../format.js';
 
 export class CartRow extends ViewComponent {
 	template() {
-		const { row, onIncrease, onDecrease, onRemove } = this.props;
+		const { row, pending, onIncrease, onDecrease, onRemove } = this.props;
 
 		return article(
 			div(
@@ -31,6 +31,7 @@ export class CartRow extends ViewComponent {
 				button('−')
 					.class('quantity-button')
 					.prop('type', 'button')
+					.prop('disabled', value(pending))
 					.aria('label', value(row, (current) => `Snížit množství: ${current.name}`))
 					.on('click', () => onDecrease(row.value.id)),
 				output(value(row, (current) => current.quantity))
@@ -39,11 +40,13 @@ export class CartRow extends ViewComponent {
 				button('+')
 					.class('quantity-button')
 					.prop('type', 'button')
+					.prop('disabled', value(pending))
 					.aria('label', value(row, (current) => `Zvýšit množství: ${current.name}`))
 					.on('click', () => onIncrease(row.value.id)),
 				button('Odebrat')
 					.class('remove-button')
 					.prop('type', 'button')
+					.prop('disabled', value(pending))
 					.aria('label', value(row, (current) => `Odebrat z objednávky: ${current.name}`))
 					.on('click', () => onRemove(row.value.id)),
 			).class('cart-row__controls'),

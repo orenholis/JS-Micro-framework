@@ -107,9 +107,10 @@ Poté lze otevřít:
 - prohlížečové testy: `http://127.0.0.1:4173/tests/`
 
 Katalog poskytují endpointy `GET /api/categories`, `GET /api/menu-items`,
-`GET /api/menu-items?category=<id>` a `GET /api/menu-items/<id>`. Schéma už
-obsahuje také tabulky objednávek; jejich zápis bude zapojen v další části
-implementace kiosku.
+`GET /api/menu-items?category=<id>` a `GET /api/menu-items/<id>`. Kiosk odesílá
+potvrzenou objednávku na `POST /api/orders`. Server znovu ověří položky a
+množství, cenu vypočítá z aktuálních dat katalogu a objednávku i její řádky
+uloží v jedné databázové transakci.
 
 Úplné lokální ověření včetně produkčního buildu a velikosti:
 

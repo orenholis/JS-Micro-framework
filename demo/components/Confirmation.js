@@ -3,13 +3,14 @@ import { formatItemCount, money } from '../format.js';
 
 export class Confirmation extends ViewComponent {
 	template() {
-		const { summary, onReset } = this.props;
+		const { order, onReset } = this.props;
 
 		return div(
 			section(
 				div('✓').class('confirmation__icon').aria('hidden', 'true'),
 				h2('Objednávka přijata'),
-				p(`${formatItemCount(summary.count)} v hodnotě ${money(summary.total)}.`),
+				p(`Číslo objednávky: ${order.id}`).class('confirmation__order-number'),
+				p(`${formatItemCount(order.count)} v hodnotě ${money(order.total)}.`),
 				button('Nová objednávka')
 					.class('primary-button')
 					.prop('type', 'button')

@@ -56,6 +56,29 @@ await test('klient načte detail zvoleného produktu', async () => {
 	assert.deepEqual(item, { id: 8, name: 'Espresso' });
 });
 
+await test('klient odešle objednávku pouze s identifikátory a množstvím', async () => {
+	let request;
+	const api = createCatalogApi(async (url, options) => {
+		request = { url, options };
+		return jsonResponse({ id: 12, status: 'created', count: 2, total: 318 }, 201);
+	});
+	const controller = new AbortController();
+	const order = await api.createOrder(
+		[{ id: 1, name: 'Cena z klienta se nesmí použít', price: 1, quantity: 2 }],
+		{ signal: controller.signal },
+	);
+
+	assert.equal(request.url, '/api/orders');
+	assert.equal(request.options.method, 'POST');
+	assert.equal(request.options.headers.Accept, 'application/json');
+	assert.equal(request.options.headers['Content-Type'], 'application/json');
+	assert.equal(request.options.signal, controller.signal);
+	assert.deepEqual(JSON.parse(request.options.body), {
+		items: [{ menuItemId: 1, quantity: 2 }],
+	});
+	assert.equal(order.id, 12);
+});
+
 await test('chybná odpověď serveru vytvoří ApiError', async () => {
 	const api = createCatalogApi(async () => jsonResponse({ error: 'Unavailable' }, 503));
 
@@ -65,4 +88,4 @@ await test('chybná odpověď serveru vytvoří ApiError', async () => {
 	);
 });
 
-console.log(`\n${passed} testy API klienta prošly.`);
+console.log(`\n${passed} testů API klienta prošlo.`);

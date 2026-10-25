@@ -112,6 +112,68 @@ try {
 		assert.deepEqual(await response.json(), { error: 'Menu item not found' });
 	});
 
+	await test('API uloží objednávku s cenami z databáze', async () => {
+		const response = await fetch(`${baseUrl}/api/orders`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				items: [
+					{ menuItemId: 1, quantity: 2 },
+					{ menuItemId: 3, quantity: 1 },
+				],
+			}),
+		});
+		const order = await response.json();
+
+		assert.equal(response.status, 201);
+		assert.deepEqual(
+			{ id: order.id, status: order.status, count: order.count, total: order.total },
+			{ id: 1, status: 'created', count: 3, total: 377 },
+		);
+		assert.match(order.createdAt, /^\d{4}-\d{2}-\d{2}/);
+
+		const database = await openKioskDatabase(databasePath);
+		assert.deepEqual(
+			database
+				.prepare(
+					'SELECT menu_item_id AS menuItemId, name, unit_price AS unitPrice, quantity FROM order_items WHERE order_id = ? ORDER BY menu_item_id',
+				)
+				.all(order.id)
+				.map((row) => ({ ...row })),
+			[
+				{ menuItemId: 1, name: 'Kuřecí burger', unitPrice: 159, quantity: 2 },
+				{ menuItemId: 3, name: 'Domácí limonáda', unitPrice: 59, quantity: 1 },
+			],
+		);
+		database.close();
+	});
+
+	await test('API odmítne prázdnou a neplatnou objednávku', async () => {
+		const emptyResponse = await fetch(`${baseUrl}/api/orders`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ items: [] }),
+		});
+		const unknownItemResponse = await fetch(`${baseUrl}/api/orders`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ items: [{ menuItemId: 999, quantity: 1 }] }),
+		});
+		const malformedResponse = await fetch(`${baseUrl}/api/orders`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: '{',
+		});
+
+		assert.equal(emptyResponse.status, 400);
+		assert.equal(unknownItemResponse.status, 400);
+		assert.equal(malformedResponse.status, 400);
+
+		const database = await openKioskDatabase(databasePath);
+		assert.equal(database.prepare('SELECT COUNT(*) AS count FROM orders').get().count, 1);
+		database.close();
+	});
+
 	await test('server nadále poskytuje kioskovou aplikaci', async () => {
 		const response = await fetch(`${baseUrl}/demo/`);
 		const html = await response.text();
