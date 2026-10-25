@@ -229,15 +229,15 @@ await settle();
 findButton(app.root, 'Nápoje').click();
 await settle();
 assert.equal(app.category.value, 'drinks');
-assert.deepEqual(app.visibleItems.value.map((item) => item.name), ['Espresso', 'Perlivá voda']);
+assert.deepEqual(app.visibleItems.value.map((item) => item.name), ['Cola', 'Pomerančová limonáda']);
 
-const espressoTrigger = findProduct(app.root, 'Espresso');
-espressoTrigger.focus();
-espressoTrigger.click();
+const colaTrigger = findProduct(app.root, 'Cola');
+colaTrigger.focus();
+colaTrigger.click();
 document.dispatchEvent(keyboardEvent('Tab'));
 assert.equal(document.activeElement.getAttribute('aria-label'), 'Zavřít detail');
 await settle();
-assert.equal(app.detailItem.value.name, 'Espresso');
+assert.equal(app.detailItem.value.name, 'Cola');
 assert.equal(document.activeElement.getAttribute('aria-label'), 'Zavřít detail');
 
 document.dispatchEvent(keyboardEvent('Tab'));
@@ -246,31 +246,31 @@ document.dispatchEvent(keyboardEvent('Tab', true));
 assert.equal(document.activeElement.getAttribute('aria-label'), 'Zavřít detail');
 document.dispatchEvent(keyboardEvent('Escape'));
 assert.equal(app.detailItemId.value, null);
-assert.equal(document.activeElement, espressoTrigger);
+assert.equal(document.activeElement, colaTrigger);
 
-espressoTrigger.click();
+colaTrigger.click();
 await settle();
 findButton(app.root, 'Přidat do objednávky').click();
 assert.equal(app.cartSummary.value.count, 1);
-assert.equal(app.cartSummary.value.total, 55);
+assert.equal(app.cartSummary.value.total, 49);
 
-const espressoRow = findCartRow(app.root, 'Espresso');
-findButton(app.root, 'Zvýšit množství: Espresso').click();
+const colaRow = findCartRow(app.root, 'Cola');
+findButton(app.root, 'Zvýšit množství: Cola').click();
 assert.equal(app.cartSummary.value.count, 2);
-assert.equal(app.cartSummary.value.total, 110);
-assert.equal(findCartRow(app.root, 'Espresso'), espressoRow, 'Řádek košíku ztratil identitu.');
+assert.equal(app.cartSummary.value.total, 98);
+assert.equal(findCartRow(app.root, 'Cola'), colaRow, 'Řádek košíku ztratil identitu.');
 
-findButton(app.root, 'Oblíbené').click();
+findButton(app.root, 'Doporučujeme').click();
 await settle();
-findProduct(app.root, 'Kuřecí burger').click();
+findProduct(app.root, 'Double Smash').click();
 await settle();
 findButton(app.root, 'Přidat do objednávky').click();
 assert.equal(app.cartSummary.value.count, 3);
-assert.equal(app.cartSummary.value.total, 269);
+assert.equal(app.cartSummary.value.total, 287);
 
-findButton(app.root, 'Odebrat z objednávky: Espresso').click();
+findButton(app.root, 'Odebrat z objednávky: Cola').click();
 assert.equal(app.cartSummary.value.count, 1);
-assert.equal(app.cartSummary.value.total, 159);
+assert.equal(app.cartSummary.value.total, 189);
 
 findButton(app.root, 'Potvrdit objednávku').click();
 await settle();

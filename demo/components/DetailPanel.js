@@ -35,8 +35,9 @@ export class DetailPanel extends ViewComponent {
 					.prop('hidden', value(status, (current) => current !== 'error')),
 
 				div(
-					div(value(item, (current) => current?.emoji ?? ''))
-						.class('detail-panel__emoji')
+					div()
+						.class('detail-panel__image', 'product-image')
+						.attr('data-menu-id', value(item, (current) => current?.id ?? null))
 						.aria('hidden', 'true'),
 					p(value(item, (current) => current?.description ?? '')),
 					div(

@@ -9,7 +9,8 @@ export class Confirmation extends ViewComponent {
 		return div(
 			section(
 				div('✓').class('confirmation__icon').aria('hidden', 'true'),
-				h2('Objednávka přijata').id('confirmation-title'),
+				h2('Děkujeme!').id('confirmation-title'),
+				p('Vaši objednávku právě připravujeme.'),
 				p(`Číslo objednávky: ${order.id}`).class('confirmation__order-number'),
 				p(`${formatItemCount(order.count)} v hodnotě ${money(order.total)}.`),
 				button('Nová objednávka')

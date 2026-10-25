@@ -20,8 +20,8 @@ export class CartPanel extends ViewComponent {
 		return aside(
 			div(
 				div(
-					p('Aktuální výběr').class('eyebrow'),
-					h2('Objednávka').id('cart-title').attr('tabindex', '-1').ref('title'),
+					p('Vaše objednávka').class('eyebrow'),
+					h2('Přehled').id('cart-title').attr('tabindex', '-1').ref('title'),
 				),
 				button('Vyprázdnit')
 					.class('clear-cart-button')
@@ -44,7 +44,7 @@ export class CartPanel extends ViewComponent {
 				.aria('live', 'polite')
 				.aria('atomic', 'true'),
 
-			p('Zatím jste nic nevybrali.')
+			p('Vybrané položky se zobrazí tady.')
 				.class('empty-state')
 				.prop(
 					'hidden',

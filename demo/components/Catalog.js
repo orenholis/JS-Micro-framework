@@ -8,13 +8,13 @@ export class Catalog extends ViewComponent {
 		return section(
 			div(
 				div(
-					p('Objednávkový kiosk').class('eyebrow'),
-					h1('Vyberte si z nabídky')
+					p('Čerstvě připraveno').class('eyebrow'),
+					h1('Co si dnes dáte?')
 						.id('menu-title')
 						.attr('tabindex', '-1')
 						.ref(titleRef),
 				),
-				p('Ukázka cílených DOM aktualizací bez virtuálního stromu.').class(
+				p('Vyberte kategorii a klepněte na produkt.').class(
 					'section-heading__copy',
 				),
 			).class('section-heading'),

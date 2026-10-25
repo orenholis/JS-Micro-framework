@@ -100,6 +100,11 @@ používá vestavěný modul SQLite. Při prvním spuštění automaticky vytvo�
 `framework/.data/kiosk.sqlite`, aplikuje schéma a vloží opakovatelnou sadu
 kategorií a produktů. Tento vygenerovaný soubor není součástí repozitáře.
 
+Demonstrační aplikace používá vlastní značku BITE a realistický katalog se
+šesti kategoriemi a šestnácti položkami. Produktové fotografie jsou uložené
+lokálně v jednom obrazovém atlasu, takže kiosk za běhu nestahuje externí
+obrázky ani jiná data.
+
 Poté lze otevřít:
 
 - kiosk: `http://127.0.0.1:4173/demo/`

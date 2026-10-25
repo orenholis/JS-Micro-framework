@@ -6,11 +6,14 @@ export class MenuItem extends ViewComponent {
 		const { item, onOpen } = this.props;
 
 		return button(
-			span(value(item, (current) => current.emoji))
-				.class('menu-card__emoji')
+			span()
+				.class('menu-card__image', 'product-image')
+				.attr('data-menu-id', value(item, (current) => current.id))
 				.aria('hidden', 'true'),
-			strong(value(item, (current) => current.name)).class('menu-card__name'),
-			span(value(item, (current) => money(current.price))).class('menu-card__price'),
+			span(
+				strong(value(item, (current) => current.name)).class('menu-card__name'),
+				span(value(item, (current) => money(current.price))).class('menu-card__price'),
+			).class('menu-card__copy'),
 		)
 			.class('menu-card')
 			.prop('type', 'button')

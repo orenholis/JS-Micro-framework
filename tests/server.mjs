@@ -20,8 +20,8 @@ async function test(name, run) {
 await test('databáze vytvoří schéma a deterministická mock data', async () => {
 	const database = await openKioskDatabase(databasePath);
 
-	assert.equal(database.prepare('SELECT COUNT(*) AS count FROM categories').get().count, 4);
-	assert.equal(database.prepare('SELECT COUNT(*) AS count FROM menu_items').get().count, 9);
+	assert.equal(database.prepare('SELECT COUNT(*) AS count FROM categories').get().count, 6);
+	assert.equal(database.prepare('SELECT COUNT(*) AS count FROM menu_items').get().count, 16);
 	assert.deepEqual(
 		database
 			.prepare(
@@ -41,7 +41,7 @@ await test('databáze vytvoří schéma a deterministická mock data', async () 
 	const reopened = await openKioskDatabase(databasePath);
 	assert.equal(
 		reopened.prepare('SELECT COUNT(*) AS count FROM menu_items').get().count,
-		9,
+		16,
 		'Opakované spuštění nesmí duplikovat mock data.',
 	);
 	reopened.close();
@@ -69,7 +69,7 @@ try {
 		assert.equal(response.status, 200);
 		assert.deepEqual(
 			categories.map((category) => category.id),
-			['popular', 'burgers', 'bowls', 'drinks'],
+			['popular', 'burgers', 'chicken', 'sides', 'drinks', 'desserts'],
 		);
 	});
 
@@ -78,7 +78,7 @@ try {
 		const items = await response.json();
 
 		assert.equal(response.status, 200);
-		assert.equal(items.length, 9);
+		assert.equal(items.length, 16);
 		assert.deepEqual(
 			items.slice(0, 3).map((item) => item.id),
 			[1, 2, 3],
@@ -92,7 +92,7 @@ try {
 		assert.equal(response.status, 200);
 		assert.deepEqual(
 			items.map((item) => item.name),
-			['Espresso', 'Perlivá voda'],
+			['Cola', 'Pomerančová limonáda'],
 		);
 	});
 
@@ -101,7 +101,7 @@ try {
 		const item = await response.json();
 
 		assert.equal(response.status, 200);
-		assert.equal(item.name, 'Kuřecí burger');
+		assert.equal(item.name, 'Double Smash');
 		assert.equal(item.category, 'popular');
 	});
 
@@ -128,7 +128,7 @@ try {
 		assert.equal(response.status, 201);
 		assert.deepEqual(
 			{ id: order.id, status: order.status, count: order.count, total: order.total },
-			{ id: 1, status: 'created', count: 3, total: 377 },
+			{ id: 1, status: 'created', count: 3, total: 577 },
 		);
 		assert.match(order.createdAt, /^\d{4}-\d{2}-\d{2}/);
 
@@ -141,8 +141,8 @@ try {
 				.all(order.id)
 				.map((row) => ({ ...row })),
 			[
-				{ menuItemId: 1, name: 'Kuřecí burger', unitPrice: 159, quantity: 2 },
-				{ menuItemId: 3, name: 'Domácí limonáda', unitPrice: 59, quantity: 1 },
+				{ menuItemId: 1, name: 'Double Smash', unitPrice: 189, quantity: 2 },
+				{ menuItemId: 3, name: 'BBQ Bacon', unitPrice: 199, quantity: 1 },
 			],
 		);
 		database.close();
@@ -179,7 +179,7 @@ try {
 		const html = await response.text();
 
 		assert.equal(response.status, 200);
-		assert.match(html, /Constrained UI/);
+		assert.match(html, /BITE/);
 	});
 
 	await test('kiosk lze spustit přímo ze zdrojových ES modulů', async () => {

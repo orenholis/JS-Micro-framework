@@ -7,10 +7,13 @@ export class TopBar extends ViewComponent {
 
 		return header(
 			div(
-				span('C').class('brand__mark').aria('hidden', 'true'),
-				div(strong('Constrained UI'), small('framework demo')),
+				span('B').class('brand__mark').aria('hidden', 'true'),
+				div(strong('BITE'), small('fresh kitchen')),
 			).class('brand'),
-			span(value(summary, (current) => formatItemCount(current.count))).class('cart-count'),
+			span(
+				span('Vaše objednávka'),
+				strong(value(summary, (current) => formatItemCount(current.count))),
+			).class('cart-count'),
 		).class('topbar');
 	}
 }

@@ -15,6 +15,10 @@ export class CartRow extends ViewComponent {
 		const { row, pending, onIncrease, onDecrease, onRemove } = this.props;
 
 		return article(
+			span()
+				.class('cart-row__image', 'product-image')
+				.attr('data-menu-id', value(row, (current) => current.id))
+				.aria('hidden', 'true'),
 			div(
 				div(
 					strong(value(row, (current) => current.name)),

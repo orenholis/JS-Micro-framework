@@ -51,6 +51,10 @@ function seedCatalog(database) {
 				index,
 			);
 		});
+		const placeholders = categories.map(() => '?').join(', ');
+		database
+			.prepare(`DELETE FROM categories WHERE id NOT IN (${placeholders})`)
+			.run(...categories.map((category) => category.id));
 		database.exec('COMMIT');
 	} catch (error) {
 		database.exec('ROLLBACK');
