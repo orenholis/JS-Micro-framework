@@ -1,4 +1,4 @@
-import { ViewComponent, button, div, h2, p, section, span, strong, value } from '../../src/index.js';
+import { ViewComponent, button, div, h2, p, section, span, strong } from '../../src/index.js';
 import { trapTabKey } from '../focus.js';
 import { money } from '../format.js';
 
@@ -14,16 +14,16 @@ export class DetailPanel extends ViewComponent {
 					.aria('label', 'Zavřít detail')
 					.ref('close')
 					.on('click', onClose),
-				h2(value(item, (current) => current?.name ?? 'Detail produktu')).id('detail-title'),
+				h2(item.map((current) => current?.name ?? 'Detail produktu')).id('detail-title'),
 
 				div(span('Načítám detail…'))
 					.class('detail-panel__status')
 					.attr('role', 'status')
 					.aria('live', 'polite')
-					.prop('hidden', value(status, (current) => current !== 'loading')),
+					.prop('hidden', status.map((current) => current !== 'loading')),
 
 				div(
-					p(value(error)),
+					p(error),
 					button('Zkusit znovu')
 						.class('secondary-button')
 						.prop('type', 'button')
@@ -32,16 +32,16 @@ export class DetailPanel extends ViewComponent {
 				)
 					.class('detail-panel__status', 'detail-panel__status--error')
 					.attr('role', 'alert')
-					.prop('hidden', value(status, (current) => current !== 'error')),
+					.prop('hidden', status.map((current) => current !== 'error')),
 
 				div(
 					div()
 						.class('detail-panel__image', 'product-image')
-						.attr('data-menu-id', value(item, (current) => current?.id ?? null))
+						.attr('data-menu-id', item.map((current) => current?.id ?? null))
 						.aria('hidden', 'true'),
-					p(value(item, (current) => current?.description ?? '')),
+					p(item.map((current) => current?.description ?? '')),
 					div(
-						strong(value(item, (current) => money(current?.price ?? 0))),
+						strong(item.map((current) => money(current?.price ?? 0))),
 						button('Přidat do objednávky')
 							.class('primary-button')
 							.prop('type', 'button')
@@ -50,11 +50,11 @@ export class DetailPanel extends ViewComponent {
 					).class('detail-panel__footer'),
 				)
 					.class('detail-panel__content')
-					.prop('hidden', value(status, (current) => current !== 'ready')),
+					.prop('hidden', status.map((current) => current !== 'ready')),
 			)
 				.class('detail-panel')
 				.attr('role', 'dialog')
-				.attr('aria-busy', value(status, (current) => current === 'loading' ? 'true' : null))
+				.attr('aria-busy', status.map((current) => current === 'loading' ? 'true' : null))
 				.aria('modal', 'true')
 				.aria('labelledby', 'detail-title'),
 		)

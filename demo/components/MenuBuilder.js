@@ -1,4 +1,4 @@
-import { ViewComponent, button, div, h2, section, span, strong, value } from '../../src/index.js';
+import { ViewComponent, button, div, h2, section, span, strong } from '../../src/index.js';
 import { menuItems } from '../data.js';
 import { money } from '../format.js';
 
@@ -23,7 +23,7 @@ class BuilderChoice extends ViewComponent {
 			] : [span(label).class('builder-choice__plain')]),
 		)
 			.class('builder-choice')
-			.class('is-active', value(selection, (current) => current[selectionKey] === itemId))
+			.class('is-active', selection.map((current) => current[selectionKey] === itemId))
 			.prop('type', 'button')
 			.aria('label', item ? `Vybrat: ${item.name}` : label)
 			.on('click', () => onSelect(selectionKey, itemId));
@@ -80,13 +80,13 @@ export class MenuBuilder extends ViewComponent {
 						.ref('close')
 						.on('click', this.props.onClose),
 					div(
-						span(value(this.step, (current) => steps[current].eyebrow)).class('eyebrow'),
-						h2(value(this.step, (current) => steps[current].title)).id('builder-title'),
+						span(this.step.map((current) => steps[current].eyebrow)).class('eyebrow'),
+						h2(this.step.map((current) => steps[current].title)).id('builder-title'),
 					).class('flow-heading__copy'),
 					div(
 						...steps.map((_, index) => span()
 							.class('builder-progress__step')
-							.class('is-active', value(this.step, (current) => current >= index))),
+							.class('is-active', this.step.map((current) => current >= index))),
 					).class('builder-progress').aria('hidden', 'true'),
 				).class('flow-heading', 'builder-heading'),
 				...steps.map((step, index) => div(
@@ -103,17 +103,17 @@ export class MenuBuilder extends ViewComponent {
 					).class('builder-choices'),
 				)
 					.class('builder-step')
-					.prop('hidden', value(this.step, (current) => current !== index))),
+					.prop('hidden', this.step.map((current) => current !== index))),
 				div(
 					button('Zpět')
 						.class('secondary-button')
 						.prop('type', 'button')
-						.prop('hidden', value(this.step, (current) => current === 0))
+						.prop('hidden', this.step.map((current) => current === 0))
 						.on('click', () => this.step.value -= 1),
-					button(value(this.step, (current) => current === steps.length - 1 ? 'Přidat menu do objednávky' : 'Pokračovat'))
+					button(this.step.map((current) => current === steps.length - 1 ? 'Přidat menu do objednávky' : 'Pokračovat'))
 						.class('primary-button')
 						.prop('type', 'button')
-						.prop('disabled', value(this.canContinue, (current) => !current))
+						.prop('disabled', this.canContinue.map((current) => !current))
 						.on('click', () => this.continue()),
 				).class('builder-actions'),
 			).class('flow-screen', 'menu-builder').aria('labelledby', 'builder-title'),

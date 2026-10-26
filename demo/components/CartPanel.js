@@ -8,7 +8,6 @@ import {
 	p,
 	span,
 	strong,
-	value,
 } from '../../src/index.js';
 import { formatItemCount, money } from '../format.js';
 import { CartRow } from './CartRow.js';
@@ -20,14 +19,14 @@ export class CartPanel extends ViewComponent {
 		return aside(
 			div(
 				div(
-					p(value(summary, (current) => formatItemCount(current.count))).class('eyebrow'),
+					p(summary.map((current) => formatItemCount(current.count))).class('eyebrow'),
 					h2('Přehled položek').id('cart-title').attr('tabindex', '-1').ref('title'),
 				),
 				button('Vyprázdnit')
 					.class('clear-cart-button')
 					.prop('type', 'button')
-					.prop('hidden', value(summary, (current) => current.count === 0))
-					.prop('disabled', value(pending))
+					.prop('hidden', summary.map((current) => current.count === 0))
+					.prop('disabled', pending)
 					.aria('label', 'Vyprázdnit objednávku')
 					.on('click', () => {
 						onClear();
@@ -35,11 +34,10 @@ export class CartPanel extends ViewComponent {
 					}),
 			).class('cart-panel__heading'),
 
-			span(value(
-				summary,
-				(current) =>
-					`V objednávce ${current.count === 1 ? 'je' : 'jsou'} ${formatItemCount(current.count)}. Celkem ${money(current.total)}.`,
-			))
+			span(summary.map((current) => {
+				const verb = current.count === 1 ? 'je' : 'jsou';
+				return `V objednávce ${verb} ${formatItemCount(current.count)}. Celkem ${money(current.total)}.`;
+			}))
 				.class('visually-hidden')
 				.aria('live', 'polite')
 				.aria('atomic', 'true'),
@@ -48,7 +46,7 @@ export class CartPanel extends ViewComponent {
 				.class('empty-state')
 				.prop(
 					'hidden',
-					value(summary, (current) => current.count > 0),
+					summary.map((current) => current.count > 0),
 				),
 
 			div(
@@ -60,22 +58,22 @@ export class CartPanel extends ViewComponent {
 
 			div(
 				span('Celkem'),
-				strong(value(summary, (current) => money(current.total))).class(
+				strong(summary.map((current) => money(current.total))).class(
 					'total-value',
 				),
 			).class('total-row'),
 
-			p(value(error))
+			p(error)
 				.class('order-error')
-				.prop('hidden', value(error, (message) => message.length === 0))
+				.prop('hidden', error.map((message) => message.length === 0))
 				.attr('role', 'alert'),
 
-			button(value(pending, (isPending) => (isPending ? 'Čekejte prosím…' : 'Pokračovat')))
+			button(pending.map((isPending) => (isPending ? 'Čekejte prosím…' : 'Pokračovat')))
 				.class('primary-button', 'primary-button--wide')
 				.prop('type', 'button')
 				.prop(
 					'disabled',
-					value(this.computed([summary, pending], (current, isPending) => current.count === 0 || isPending)),
+					this.computed([summary, pending], (current, isPending) => current.count === 0 || isPending),
 				)
 				.on('click', onConfirm),
 		)

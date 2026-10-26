@@ -1,3 +1,5 @@
+export const VALUE = Symbol('value');
+
 export class Signal {
 	#value;
 	#subscribers = new Set();
@@ -26,6 +28,10 @@ export class Signal {
 		this.value = updater(this.#value);
 	}
 
+	map(map) {
+		return { [VALUE]: true, source: this, map };
+	}
+
 	subscribe(subscriber, { immediate = true } = {}) {
 		this.#subscribers.add(subscriber);
 		if (immediate) subscriber(this.#value);
@@ -43,6 +49,8 @@ export class Signal {
 export function state(initialValue) {
 	return new Signal(initialValue);
 }
+
+export { state as signal };
 
 export function isSignal(value) {
 	return value instanceof Signal;

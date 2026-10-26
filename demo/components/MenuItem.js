@@ -1,4 +1,4 @@
-import { ViewComponent, button, span, strong, value } from '../../src/index.js';
+import { ViewComponent, button, span, strong } from '../../src/index.js';
 import { money } from '../format.js';
 
 export class MenuItem extends ViewComponent {
@@ -8,11 +8,11 @@ export class MenuItem extends ViewComponent {
 		return button(
 			span()
 				.class('menu-card__image', 'product-image')
-				.attr('data-menu-id', value(item, (current) => current.id))
+				.attr('data-menu-id', item.map((current) => current.id))
 				.aria('hidden', 'true'),
 			span(
-				strong(value(item, (current) => current.name)).class('menu-card__name'),
-				span(value(item, (current) => money(current.price))).class('menu-card__price'),
+				strong(item.map((current) => current.name)).class('menu-card__name'),
+				span(item.map((current) => money(current.price))).class('menu-card__price'),
 			).class('menu-card__copy'),
 		)
 			.class('menu-card')

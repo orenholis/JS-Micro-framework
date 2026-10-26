@@ -17,7 +17,6 @@ import {
   div,
   mount,
   strong,
-  value,
 } from './src/index.js';
 
 class Counter extends ViewComponent {
@@ -30,10 +29,10 @@ class Counter extends ViewComponent {
     return div(
       button(
         'Počet kliknutí: ',
-        strong(value(this.count)),
+        strong(this.count),
       )
         .class('counter')
-        .class('is-positive', value(this.count, (count) => count > 0))
+        .class('is-positive', this.count.map((count) => count > 0))
         .prop('type', 'button')
         .on('click', () => this.count.update((count) => count + 1)),
     ).class('counter-wrapper');
@@ -45,8 +44,9 @@ mount(new Counter(), document.querySelector('#app'));
 
 Builder elementu podporuje:
 
-- `.class('card', 'card--wide')` pro statické CSS třídy;
-- `.class('is-active', value(signal))` pro reaktivní třídu;
+- `.class('card', 'card--wide')` pro statické CSS třídy (řetězce);
+- `.class('is-active', podmínka)` pro přepínanou třídu, kde podmínka je
+  signál, `signal.map(...)` nebo boolean; pořadí volání nehraje roli;
 - `.attr(name, value)`, `.aria(name, value)` a `.data(name, value)`;
 - `.prop(name, value)` pro DOM vlastnosti, například `disabled` nebo `value`;
 - `.style(name, value)` pro statické i reaktivní styly;
@@ -55,9 +55,30 @@ Builder elementu podporuje:
 - `.ref(name)` pro uložení skutečného uzlu do `this.refs`;
 - `.text(value)`, `.child(value)` a `.children(...values)` pro obsah.
 
-Každá hodnota přijímaná atributem, vlastností, třídou nebo stylem může být
-statická nebo vytvořená pomocí `value(signal, transformace)`. `show(...)`
-spravuje podmíněný podstrom a `each(...)` seznam se stabilními klíči.
+Každá hodnota přijímaná textem, atributem, vlastností, třídou nebo stylem může
+být statická, přímo signál, nebo odvozená vazba `signal.map(transformace)`.
+Funkce `value(zdroj, transformace)` dělá totéž a přijímá i statickou hodnotu,
+takže komponenta může stejný vstup dostat jako konstantu i jako signál.
+Signál se vytváří funkcí `signal()` nebo v komponentě metodou `this.signal()`;
+`state()` zůstává jako alias.
+
+Dynamickou strukturu řídí tři konstrukce:
+
+- `show(zdroj, render)` vloží podstrom, dokud je hodnota pravdivá; `render`
+  smí vrátit `null` a pak nevloží nic;
+- `match(zdroj, { klíč: () => ... })` přepíná mezi variantami podle hodnoty,
+  například mezi obrazovkami aplikace;
+- `each(zdroj, { key, render })` udržuje seznam se stabilními klíči; `render`
+  dostává položku jako signál, takže se změna dat promítne do existujícího
+  řádku bez jeho nahrazení.
+
+Reference `.ref(name)` uvnitř `show`, `match` nebo `each` se uloží do
+`this.refs` komponenty, která šablonu vrátila.
+
+Metoda `afterMount()` se volá až ve chvíli, kdy je kořen komponenty i celý
+strom, do kterého patří, vložen do cílového uzlu. Vnořené komponenty ji
+dostávají dříve než rodič. `beforeDestroy()` se volá před uvolněním odběrů
+a událostí.
 
 Pro neobvyklé HTML elementy lze místo pojmenované funkce použít
 `tag('custom-element', ...children)`. Opakované nastavení lze zapouzdřit do
@@ -73,8 +94,10 @@ tag('status-panel', 'Připraveno')
   .data('state', 'ready');
 ```
 
-Původní objektový popis a nízkoúrovňové funkce zůstaly
-dostupné pro kompatibilitu a nestandardní použití.
+Starší objektový zápis (`{ tag, children, 'on:click' }`) byl z V0 odstraněn,
+aby existoval jediný způsob zápisu šablon. Nízkoúrovňová funkce `element()`
+zůstává v `src/dom.js` pro testy a nestandardní použití, ale není součástí
+veřejného vstupu `index.js`, a proto se nezapočítává do velikosti jádra.
 
 ## Princip vykreslování
 
@@ -85,8 +108,11 @@ upraví konkrétní text, atribut, vlastnost, třídu nebo styl a znovu nevykres
 celou komponentu.
 
 Komponenta vlastní své reaktivní odběry, obsluhy událostí a vnořené komponenty.
-`destroy()` je odstraní a uvolní. Podmíněný obsah používá hraniční komentářové
-uzly a seznam zachovává podle klíče identitu nezměněných položek.
+`destroy()` je odstraní a uvolní. Z dokumentu přitom odebere pouze svůj kořen;
+vnořené uzly odcházejí s ním, takže zničení obrazovky se seznamem znamená
+jednu DOM operaci, nikoli jednu za každý řádek. Podmíněný obsah používá
+hraniční komentářové uzly a seznam zachovává podle klíče identitu nezměněných
+položek. Položky, jejichž pořadí se nezměnilo, seznam vůbec nepřesouvá.
 
 ## Spuštění a ověření
 
@@ -144,7 +170,7 @@ kontrola je součástí `npm run verify`.
 - `dist/constrained-ui.min.js` a sdílený chunk – minifikované jádro;
 - `dist/svg.min.js` – volitelný SVG modul.
 
-Aktuální V0 má 9 790 B minifikovaného jádra (3 750 B gzip, 3 361 B brotli).
+Aktuální V0 má 9 614 B minifikovaného jádra (3 799 B gzip, 3 410 B brotli).
 Volitelný SVG vstup přidává 443 B před kompresí. Hodnoty reprodukuje
 `npm run size`; příkaz současně selže při překročení limitu 10 kB a ověří
 veřejné API čitelné i minifikované distribuce.
@@ -158,7 +184,7 @@ fokusem a návrat fokusu do nabídky po dokončení objednávky.
 - `FR1`: třídní komponenty, mount, destroy, vlastnictví potomků a idempotentní uvolnění;
 - `FR2`: řetězitelný deklarativní zápis a přímé cílené aktualizace DOM;
 - `FR3`: synchronní signály a explicitní vazby na text, vlastnosti, atributy, třídy a styly;
-- `FR4`: podmíněné podstromy a seznamy se stabilními klíči;
+- `FR4`: podmíněné podstromy (`show`, `match`) a seznamy se stabilními klíči;
 - `FR5`: přímé listenery sdílející `AbortController` komponenty;
 - `FR6`: skládání komponent, reaktivní vstupy položek a callbacky k rodiči;
 - `FR7`: samostatný řetězitelný SVG modul;

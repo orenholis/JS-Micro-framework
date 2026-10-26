@@ -1,5 +1,5 @@
 export { Component, Scope, mount } from './core.js';
-export { bind, element, text } from './dom.js';
+export { bind, text } from './dom.js';
 export {
 	a,
 	article,
@@ -7,24 +7,37 @@ export {
 	button,
 	div,
 	ElementBuilder,
+	footer,
 	form,
 	h1,
 	h2,
+	h3,
 	header,
+	img,
 	input,
 	label,
 	li,
 	main,
 	nav,
+	ol,
+	option,
 	output,
 	p,
 	section,
+	select,
 	small,
 	span,
 	strong,
+	table,
 	tag,
+	tbody,
+	td,
+	textarea,
+	th,
+	thead,
+	tr,
 	ul,
 } from './html.js';
-export { computed, isSignal, Signal, state } from './state.js';
+export { computed, isSignal, Signal, signal, state } from './state.js';
 export { list, when } from './collections.js';
-export { each, show, value, view, ViewComponent } from './template.js';
+export { each, match, show, value, view, ViewComponent } from './template.js';

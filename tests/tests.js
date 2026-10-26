@@ -5,14 +5,16 @@ import {
 	button,
 	computed,
 	div,
-	element,
 	list,
 	mount,
+	section,
 	state,
+	strong,
 	tag,
 	value,
 	when,
 } from '../src/index.js';
+import { element } from '../src/dom.js';
 import { circle, svg, SVG_NAMESPACE } from '../src/svg.js';
 
 const results = [];
@@ -87,21 +89,15 @@ test('Deklarativní strom vytvoří vnořený DOM bez ručního append', () => {
 		}
 
 		template() {
-			return {
-				tag: 'section',
-				class: 'counter',
-				ref: 'section',
-				children: [
-					{
-						tag: 'button',
-						type: 'button',
-						ref: 'button',
-						'class:is-positive': value(this.count, (count) => count > 0),
-						'on:click': () => this.count.update((count) => count + 1),
-						children: ['Počet: ', { tag: 'strong', text: value(this.count) }],
-					},
-				],
-			};
+			return section(
+				button('Počet: ', strong(this.count))
+					.prop('type', 'button')
+					.ref('button')
+					.class('is-positive', this.count.map((count) => count > 0))
+					.on('click', () => this.count.update((count) => count + 1)),
+			)
+				.class('counter')
+				.ref('section');
 		}
 	}
 

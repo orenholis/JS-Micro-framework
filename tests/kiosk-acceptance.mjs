@@ -14,6 +14,9 @@ class TestNode extends EventTarget {
 		this.hidden = false;
 		this.classList = {
 			contains: (name) => this.className.split(/\s+/).includes(name),
+			add: (...names) => {
+				for (const name of names) this.classList.toggle(name, true);
+			},
 			toggle: (name, enabled) => {
 				const names = new Set(this.className.split(/\s+/).filter(Boolean));
 				if (enabled) names.add(name);
@@ -44,6 +47,18 @@ class TestNode extends EventTarget {
 		this.childNodes.splice(index, 0, node);
 		node.parentNode = this;
 		return node;
+	}
+
+	get nextSibling() {
+		const siblings = this.parentNode?.childNodes ?? [];
+		return siblings[siblings.indexOf(this) + 1] ?? null;
+	}
+
+	contains(node) {
+		for (let current = node; current; current = current.parentNode) {
+			if (current === this) return true;
+		}
+		return false;
 	}
 
 	remove() {

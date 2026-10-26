@@ -1,24 +1,18 @@
 import { Component } from './core.js';
 import { list, when } from './collections.js';
 import { isElementBuilder, readEventBinding } from './html.js';
-import { isSignal } from './state.js';
+import { isSignal, VALUE } from './state.js';
 
-const VALUE = Symbol('value');
 const EACH = Symbol('each');
 const SHOW = Symbol('show');
 
 const BINDING_PREFIXES = { attr: 'attribute', class: 'class', style: 'style' };
 
-const RESERVED_KEYS = new Set(['tag', 'namespace', 'children', 'skip']);
 
 const identity = (value) => value;
 
 export function value(source, map = identity) {
-	if (!isSignal(source)) {
-		throw new TypeError('value: Signal required');
-	}
-
-	return { [VALUE]: true, source, map };
+	return isSignal(source) ? source.map(map) : map(source);
 }
 
 export function each(source, { key, render }) {
@@ -46,9 +40,10 @@ export function show(source, render) {
 }
 
 class InlineView extends Component {
-	constructor(description) {
+	constructor(description, owner) {
 		super();
 		this.description = description;
+		this.refs = owner.refs;
 	}
 
 	create() {
@@ -56,8 +51,9 @@ class InlineView extends Component {
 	}
 }
 
-function asRenderable(description) {
-	return description instanceof Component ? description : new InlineView(description);
+function asRenderable(owner, description) {
+	if (description == null || description === false) return null;
+	return description instanceof Component ? description : new InlineView(description, owner);
 }
 
 function applyReference(owner, reference, node) {
@@ -118,6 +114,11 @@ function applyProperty(owner, node, key, candidate) {
 		return;
 	}
 
+	if (key === 'class' && typeof candidate === 'string') {
+		node.classList.add(...candidate.split(' ').filter(Boolean));
+		return;
+	}
+
 	if (key === 'class') {
 		bindValue(owner, node, 'property:className', candidate);
 		return;
@@ -140,21 +141,17 @@ function appendDescription(owner, parent, description) {
 		return;
 	}
 
-	if (description?.skip) {
-		return;
-	}
-
 	if (description?.[EACH]) {
 		list(owner, description.source, parent, {
 			key: description.key,
-			render: (item, itemKey) => asRenderable(description.render(item, itemKey)),
+			render: (item, itemKey) => asRenderable(owner, description.render(item, itemKey)),
 		});
 		return;
 	}
 
 	if (description?.[SHOW]) {
 		when(owner, description.source, parent, (current) =>
-			asRenderable(description.render(current)),
+			asRenderable(owner, description.render(current)),
 		);
 		return;
 	}
@@ -193,10 +190,6 @@ export function view(owner, description) {
 		return document.createTextNode(String(description));
 	}
 
-	if (!description || typeof description !== 'object' || Array.isArray(description)) {
-		throw new TypeError('Invalid view root');
-	}
-
 	if (isElementBuilder(description)) {
 		const node = description.namespace
 			? document.createElementNS(description.namespace, description.name)
@@ -214,27 +207,11 @@ export function view(owner, description) {
 		return node;
 	}
 
-	const tag = description.tag || 'div';
-	const namespace = description.namespace;
-	const node = namespace ? document.createElementNS(namespace, tag) : document.createElement(tag);
+	throw new TypeError('Invalid view root');
+}
 
-	for (const [key, candidate] of Object.entries(description)) {
-		if (RESERVED_KEYS.has(key)) {
-			continue;
-		}
-
-		if (key === 'ref') {
-			applyReference(owner, candidate, node);
-		} else {
-			applyProperty(owner, node, key, candidate);
-		}
-	}
-
-	if (!description.skip && description.text === undefined) {
-		appendDescription(owner, node, description.children);
-	}
-
-	return node;
+export function match(source, cases) {
+	return show(source, (current) => cases[current]?.(current));
 }
 
 export class ViewComponent extends Component {

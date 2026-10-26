@@ -1,4 +1,4 @@
-import { Component } from './core.js';
+import { Component, detach } from './core.js';
 import { state } from './state.js';
 
 function mountRenderable(renderable, parent, before) {
@@ -20,7 +20,7 @@ function mountRenderable(renderable, parent, before) {
 		nodes,
 		destroy: () => {
 			for (const node of nodes) {
-				node.remove();
+				detach(node);
 			}
 		},
 	};
@@ -40,14 +40,15 @@ export function when(owner, source, target, factory) {
 
 	const unsubscribe = source.subscribe((value) => {
 		current?.destroy();
-		current = value ? mountRenderable(factory(value), target, end) : null;
+		const renderable = value ? factory(value) : null;
+		current = renderable ? mountRenderable(renderable, target, end) : null;
 	});
 
 	owner.own(() => {
 		unsubscribe();
 		current?.destroy();
-		start.remove();
-		end.remove();
+		detach(start);
+		detach(end);
 	});
 
 	return { start, end };
@@ -92,7 +93,7 @@ export function list(owner, source, target, { key, render }) {
 		let cursor = end;
 		for (let index = ordered.length - 1; index >= 0; index -= 1) {
 			const record = ordered[index][1];
-			moveBefore(record, target, cursor);
+			if (record.nodes.at(-1).nextSibling !== cursor) moveBefore(record, target, cursor);
 			cursor = record.nodes[0];
 		}
 
@@ -106,8 +107,8 @@ export function list(owner, source, target, { key, render }) {
 		}
 
 		records.clear();
-		start.remove();
-		end.remove();
+		detach(start);
+		detach(end);
 	});
 
 	return { start, end };

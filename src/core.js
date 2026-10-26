@@ -1,6 +1,16 @@
 import { bind, text } from './dom.js';
 import { computed, state } from './state.js';
 
+// Components mounted during an outer mount wait until the whole tree is inserted.
+const pending = [];
+let mounting = 0;
+// Root of the subtree being destroyed; nodes inside it leave the document with it.
+let detaching = null;
+
+export function detach(node) {
+	if (!detaching?.contains(node)) node.remove();
+}
+
 export class Scope {
 	#cleanups = [];
 	#destroyed = false;
@@ -69,15 +79,29 @@ export class Component {
 			throw new TypeError('Invalid mount target');
 		}
 
-		const root = this.create();
-		if (!(root instanceof Node) || root instanceof DocumentFragment) {
-			throw new TypeError('Invalid component root');
+		let created = false;
+		mounting += 1;
+
+		try {
+			const root = this.create();
+			if (!(root instanceof Node) || root instanceof DocumentFragment) {
+				throw new TypeError('Invalid component root');
+			}
+
+			this.root = root;
+			target.insertBefore(root, before);
+			this.#mounted = true;
+			pending.push(this);
+			created = true;
+		} finally {
+			mounting -= 1;
+			if (mounting === 0) {
+				for (const component of pending.splice(0)) {
+					if (created && component.#mounted) component.afterMount?.();
+				}
+			}
 		}
 
-		this.root = root;
-		target.insertBefore(root, before);
-		this.#mounted = true;
-		this.afterMount?.();
 		return this;
 	}
 
@@ -86,13 +110,21 @@ export class Component {
 			return;
 		}
 
-		for (const child of [...this.#children].reverse()) {
-			child.destroy();
+		const outer = detaching;
+		detaching ??= this.root;
+
+		try {
+			for (const child of [...this.#children].reverse()) {
+				child.destroy();
+			}
+			this.#children.clear();
+			this.beforeDestroy?.();
+			this.scope.destroy();
+		} finally {
+			detaching = outer;
 		}
-		this.#children.clear();
-		this.beforeDestroy?.();
-		this.scope.destroy();
-		this.root?.remove();
+
+		if (this.root) detach(this.root);
 		this.refs = Object.create(null);
 		this.root = null;
 		this.#mounted = false;

@@ -1,4 +1,4 @@
-import { ViewComponent, div, main, show } from '../../src/index.js';
+import { ViewComponent, div, main, match, show } from '../../src/index.js';
 import { ApiError, catalogApi } from '../api.js';
 import { addCartItem, changeCartItemQuantity, clearCart, removeCartItem, summarizeCart } from '../state.js';
 import { Catalog } from './Catalog.js';
@@ -32,9 +32,6 @@ export class KioskApp extends ViewComponent {
 		this.cartSummary = this.computed(this.cart, summarizeCart);
 		this.screen = this.signal('catalog');
 		this.builderOpen = this.signal(false);
-		this.orderVisible = this.computed(this.screen, (screen) => screen === 'order');
-		this.upsellVisible = this.computed(this.screen, (screen) => screen === 'upsell');
-		this.checkoutVisible = this.computed(this.screen, (screen) => screen === 'checkout');
 		this.orderType = this.signal('eat-in');
 		this.payment = this.signal('card');
 		this.orderStatus = this.signal('idle');
@@ -303,9 +300,8 @@ export class KioskApp extends ViewComponent {
 				}),
 			),
 
-			show(
-				this.orderVisible,
-				() => new OrderScreen({
+			match(this.screen, {
+				order: () => new OrderScreen({
 					cart: this.cart,
 					error: this.orderError,
 					pending: this.orderPending,
@@ -317,20 +313,12 @@ export class KioskApp extends ViewComponent {
 					onDecrease: (itemId) => this.changeQuantity(itemId, -1),
 					onRemove: (itemId) => this.removeFromCart(itemId),
 				}),
-			),
-
-			show(
-				this.upsellVisible,
-				() => new UpsellScreen({
+				upsell: () => new UpsellScreen({
 					onAdd: (item) => this.addToCart(item),
 					onBack: () => this.showScreen('order'),
 					onContinue: () => this.showScreen('checkout'),
 				}),
-			),
-
-			show(
-				this.checkoutVisible,
-				() => new CheckoutScreen({
+				checkout: () => new CheckoutScreen({
 					onBack: () => this.showScreen('upsell'),
 					onConfirm: () => this.confirmOrder(),
 					onOrderType: (type) => {
@@ -344,7 +332,7 @@ export class KioskApp extends ViewComponent {
 					pending: this.orderPending,
 					summary: this.cartSummary,
 				}),
-			),
+			}),
 
 			show(
 				this.detailItemId,

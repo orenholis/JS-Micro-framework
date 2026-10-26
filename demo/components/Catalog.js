@@ -1,4 +1,4 @@
-import { ViewComponent, button, div, each, h1, nav, p, section, span, value } from '../../src/index.js';
+import { ViewComponent, button, div, each, h1, nav, p, section, span } from '../../src/index.js';
 import { MenuItem } from './MenuItem.js';
 import { PromoBanner } from './PromoBanner.js';
 
@@ -25,16 +25,16 @@ export class Catalog extends ViewComponent {
 			nav(
 				each(categories, {
 					key: (item) => item.id,
-					render: (item) => button(value(item, (current) => current.name))
+					render: (item) => button(item.map((current) => current.name))
 						.class('category-button')
 						.class(
 							'is-active',
-							value(category, (current) => current === item.value.id),
+							category.map((current) => current === item.value.id),
 						)
 						.prop('type', 'button')
 						.attr(
 							'aria-current',
-							value(category, (current) =>
+							category.map((current) =>
 								current === item.value.id ? 'true' : null,
 							),
 						)
@@ -43,16 +43,16 @@ export class Catalog extends ViewComponent {
 			)
 				.class('categories')
 				.aria('label', 'Kategorie menu')
-				.prop('hidden', value(categories, (current) => current.length === 0)),
+				.prop('hidden', categories.map((current) => current.length === 0)),
 
 			div(span('Načítám nabídku…').class('catalog-status__message'))
 				.class('catalog-status')
 				.attr('role', 'status')
 				.aria('live', 'polite')
-				.prop('hidden', value(status, (current) => current !== 'loading')),
+				.prop('hidden', status.map((current) => current !== 'loading')),
 
 			div(
-				p(value(error)).class('catalog-status__message'),
+				p(error).class('catalog-status__message'),
 				button('Zkusit znovu')
 					.class('secondary-button')
 					.prop('type', 'button')
@@ -60,11 +60,11 @@ export class Catalog extends ViewComponent {
 			)
 				.class('catalog-status', 'catalog-status--error')
 				.attr('role', 'alert')
-				.prop('hidden', value(status, (current) => current !== 'error')),
+				.prop('hidden', status.map((current) => current !== 'error')),
 
 			p('V této kategorii zatím nejsou žádné položky.')
 				.class('catalog-status', 'catalog-status__message')
-				.prop('hidden', value(empty, (current) => !current)),
+				.prop('hidden', empty.map((current) => !current)),
 
 			div(
 				each(items, {
@@ -73,7 +73,7 @@ export class Catalog extends ViewComponent {
 				}),
 			)
 				.class('menu-grid')
-				.prop('hidden', value(status, (current) => current !== 'ready')),
+				.prop('hidden', status.map((current) => current !== 'ready')),
 		)
 			.class('catalog')
 			.aria('labelledby', 'menu-title');

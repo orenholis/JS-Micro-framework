@@ -1,4 +1,4 @@
-import { ViewComponent, button, div, p, section, span, strong, value } from '../../src/index.js';
+import { ViewComponent, button, div, p, section, span, strong } from '../../src/index.js';
 
 function formatCountdown(seconds) {
 	const minutes = Math.floor(seconds / 60);
@@ -27,7 +27,7 @@ export class PromoBanner extends ViewComponent {
 				p('Burger, příloha, nápoj a omáčka v několika rychlých krocích.'),
 				div(
 					span('Nabídka končí za'),
-					strong(value(this.remaining, formatCountdown)).class('countdown'),
+					strong(this.remaining.map(formatCountdown)).class('countdown'),
 				).class('promo-banner__timer'),
 				button('Sestavit menu')
 					.class('promo-banner__button')

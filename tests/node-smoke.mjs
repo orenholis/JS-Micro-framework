@@ -9,6 +9,9 @@ class TestNode extends EventTarget {
 		this.style = {};
 		this.className = '';
 		this.classList = {
+			add: (...names) => {
+				for (const name of names) this.classList.toggle(name, true);
+			},
 			toggle: (name, enabled) => {
 				const names = new Set(this.className.split(/\s+/).filter(Boolean));
 				if (enabled) names.add(name);
@@ -39,6 +42,24 @@ class TestNode extends EventTarget {
 		this.childNodes.splice(index, 0, node);
 		node.parentNode = this;
 		return node;
+	}
+
+	get isConnected() {
+		let current = this;
+		while (current.parentNode) current = current.parentNode;
+		return current === document;
+	}
+
+	get nextSibling() {
+		const siblings = this.parentNode?.childNodes ?? [];
+		return siblings[siblings.indexOf(this) + 1] ?? null;
+	}
+
+	contains(node) {
+		for (let current = node; current; current = current.parentNode) {
+			if (current === this) return true;
+		}
+		return false;
 	}
 
 	remove() {
@@ -125,7 +146,9 @@ globalThis.Node = TestNode;
 globalThis.DocumentFragment = TestFragment;
 globalThis.document = new TestDocument();
 
-const { Component, Scope, ViewComponent, button, computed, div, element, list, mount, state, tag, value, when } = await import('../src/index.js');
+const framework = await import('../src/index.js');
+const { Component, Scope, ViewComponent, button, computed, div, each, h2, img, li, list, match, mount, section, show, signal, span, state, tag, ul, value, when } = framework;
+const { element } = await import('../src/dom.js');
 
 const { circle, svg, SVG_NAMESPACE } = await import('../src/svg.js');
 
@@ -207,25 +230,19 @@ test('deklarativní strom vytvoří children, refs, události a reaktivní vazby
 		}
 
 		template() {
-			return {
-				tag: 'section',
-				ref: 'card',
-				class: 'card',
-				'class:is-active': value(this.active),
-				children: [
-					{ tag: 'h2', text: value(this.title) },
-					{
-						tag: 'button',
-						ref: 'button',
-						type: 'button',
-						text: 'Změnit',
-						'on:click': () => {
-							this.title.value = 'Změněno';
-							this.active.value = true;
-						},
-					},
-				],
-			};
+			return section(
+				h2(this.title),
+				button('Změnit')
+					.ref('button')
+					.prop('type', 'button')
+					.on('click', () => {
+						this.title.value = 'Změněno';
+						this.active.value = true;
+					}),
+			)
+				.ref('card')
+				.class('card')
+				.class('is-active', this.active);
 		}
 	}
 
@@ -398,6 +415,163 @@ test('podmíněná komponenta provede cleanup', () => {
 	assert(cleanups === 2, 'Podmíněné větve nebyly uklizeny.');
 	scope.destroy();
 	assert(source.subscriberCount === 0, 'Podmínka neuvolnila odběr.');
+});
+
+test('statická třída nepřepíše dříve deklarovanou reaktivní třídu', () => {
+	class Box extends ViewComponent {
+		constructor() {
+			super();
+			this.active = this.signal(true);
+		}
+
+		template() {
+			return div().class('is-active', this.active).class('box');
+		}
+	}
+
+	const box = mount(new Box(), element('div'));
+	assert(box.root.className.split(' ').sort().join(' ') === 'box is-active', 'Statická třída přepsala reaktivní.');
+	box.active.value = false;
+	assert(box.root.className === 'box', 'Reaktivní třída se po změně neodebrala.');
+	box.destroy();
+});
+
+test('seznam bez změny pořadí nepřesouvá uzly', () => {
+	const items = signal([1, 2, 3, 4].map((id) => ({ id })));
+	class List extends ViewComponent {
+		template() {
+			return ul(each(items, { key: (item) => item.id, render: (item) => li(item.map((current) => current.id)) }));
+		}
+	}
+
+	const list = mount(new List(), element('div'));
+	let moves = 0;
+	const insertBefore = list.root.insertBefore.bind(list.root);
+	list.root.insertBefore = (node, before) => {
+		moves += 1;
+		return insertBefore(node, before);
+	};
+	items.value = items.value.map((item) => ({ ...item }));
+	assert(moves === 0, `Seznam přesunul ${moves} nezměněných uzlů.`);
+	items.value = items.value.toReversed();
+	assert(moves > 0 && list.root.textContent === '4321', 'Seznam nepřeuspořádal položky.');
+	list.destroy();
+});
+
+test('afterMount vnořené komponenty běží až po připojení celého stromu', () => {
+	const calls = [];
+	class Leaf extends ViewComponent {
+		template() {
+			return span('list');
+		}
+
+		afterMount() {
+			calls.push(`leaf:${this.root.isConnected}`);
+		}
+	}
+
+	class Branch extends ViewComponent {
+		template() {
+			return div(new Leaf());
+		}
+
+		afterMount() {
+			calls.push(`branch:${this.root.isConnected}`);
+		}
+	}
+
+	const branch = mount(new Branch(), document);
+	assert(calls.join(',') === 'leaf:true,branch:true', `Neočekávané pořadí afterMount: ${calls}`);
+	branch.destroy();
+});
+
+test('destrukce odebere z dokumentu jen kořen, ne každý vnořený uzel', () => {
+	const rows = signal([{ id: 1 }, { id: 2 }, { id: 3 }]);
+	class Row extends ViewComponent {
+		template() {
+			return li(this.props.row.map((row) => row.id));
+		}
+	}
+
+	class Table extends ViewComponent {
+		template() {
+			return ul(each(rows, { key: (row) => row.id, render: (row) => new Row({ row }) }));
+		}
+	}
+
+	const host = element('div');
+	const table = mount(new Table(), host);
+	const removed = [];
+	for (const node of [table.root, ...table.root.childNodes]) {
+		const remove = node.remove.bind(node);
+		node.remove = () => {
+			removed.push(node.nodeName);
+			remove();
+		};
+	}
+
+	table.destroy();
+	assert(removed.join(',') === 'UL', `Odebrané uzly: ${removed}`);
+	assert(host.childNodes.length === 0 && rows.subscriberCount === 0, 'Destrukce neuvolnila seznam.');
+});
+
+test('value přijme statickou hodnotu a signal.map vytvoří vazbu', () => {
+	assert(value(2, (number) => number * 2) === 4, 'Statická hodnota nebyla transformována.');
+	const price = signal(10);
+	class Price extends ViewComponent {
+		template() {
+			return span(price.map((amount) => `${amount} Kč`)).attr('data-price', price);
+		}
+	}
+
+	const view = mount(new Price(), element('div'));
+	price.value = 12;
+	assert(view.root.textContent === '12 Kč', 'Text navázaný přes map se neaktualizoval.');
+	assert(view.root.attributes.get('data-price') === '12', 'Signál nelze použít přímo jako hodnotu.');
+	view.destroy();
+	assert(price.subscriberCount === 0, 'Vazby nebyly uvolněny.');
+	assert(typeof img === 'function', 'Veřejné API neexportuje všechny HTML elementy.');
+});
+
+test('match přepíná obrazovky a show s prázdným výsledkem nic nevloží', () => {
+	const screen = signal('catalog');
+	const hidden = signal(true);
+	class Screens extends ViewComponent {
+		template() {
+			return div(
+				match(screen, { catalog: () => span('katalog'), order: () => span('objednávka') }),
+				show(hidden, () => null),
+			);
+		}
+	}
+
+	const view = mount(new Screens(), element('div'));
+	assert(view.root.textContent === 'katalog', 'Výchozí obrazovka chybí.');
+	screen.value = 'order';
+	assert(view.root.textContent === 'objednávka', 'Obrazovka se nepřepnula.');
+	screen.value = 'unknown';
+	assert(view.root.textContent === '', 'Neznámá obrazovka něco vykreslila.');
+	view.destroy();
+	assert(screen.subscriberCount === 0, 'match neuvolnil odběr.');
+});
+
+test('ref v položce seznamu se uloží do vlastnící komponenty', () => {
+	class Menu extends ViewComponent {
+		template() {
+			return ul(each(signal([{ id: 'a' }]), { key: (item) => item.id, render: () => li('A').ref('first') }));
+		}
+	}
+
+	const menu = mount(new Menu(), element('div'));
+	assert(menu.refs.first?.nodeName === 'LI', 'Reference zůstala ve skryté pomocné komponentě.');
+	menu.destroy();
+});
+
+test('každá exportovaná HTML funkce vytvoří element svého jména', () => {
+	const names = 'a article aside button div footer form h1 h2 h3 header img input label li main nav ol option output p section select small span strong table tbody td textarea th thead tr ul';
+	for (const name of names.split(' ')) {
+		assert(framework[name]().name === name, `Export ${name} vytváří jiný element.`);
+	}
 });
 
 console.log(`\n${passed} smoke testů prošlo.`);

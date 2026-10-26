@@ -110,37 +110,40 @@ const createTag =
 		(...children) =>
 			tag(name, ...children);
 
-export const a = createTag('a');
-export const article = createTag('article');
-export const aside = createTag('aside');
-export const button = createTag('button');
-export const div = createTag('div');
-export const footer = createTag('footer');
-export const form = createTag('form');
-export const h1 = createTag('h1');
-export const h2 = createTag('h2');
-export const h3 = createTag('h3');
-export const header = createTag('header');
-export const img = createTag('img');
-export const input = createTag('input');
-export const label = createTag('label');
-export const li = createTag('li');
-export const main = createTag('main');
-export const nav = createTag('nav');
-export const ol = createTag('ol');
-export const option = createTag('option');
-export const output = createTag('output');
-export const p = createTag('p');
-export const section = createTag('section');
-export const select = createTag('select');
-export const small = createTag('small');
-export const span = createTag('span');
-export const strong = createTag('strong');
-export const table = createTag('table');
-export const tbody = createTag('tbody');
-export const td = createTag('td');
-export const textarea = createTag('textarea');
-export const th = createTag('th');
-export const thead = createTag('thead');
-export const tr = createTag('tr');
-export const ul = createTag('ul');
+// Order of names must match the order of tags in the string below.
+export const [
+	a,
+	article,
+	aside,
+	button,
+	div,
+	footer,
+	form,
+	h1,
+	h2,
+	h3,
+	header,
+	img,
+	input,
+	label,
+	li,
+	main,
+	nav,
+	ol,
+	option,
+	output,
+	p,
+	section,
+	select,
+	small,
+	span,
+	strong,
+	table,
+	tbody,
+	td,
+	textarea,
+	th,
+	thead,
+	tr,
+	ul,
+] = 'a article aside button div footer form h1 h2 h3 header img input label li main nav ol option output p section select small span strong table tbody td textarea th thead tr ul'.split(' ').map(createTag);
