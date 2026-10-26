@@ -1,7 +1,7 @@
-import { ViewComponent, button, span, strong } from '../../src/index.js';
+import { Component, button, span, strong } from '../../src/index.js';
 import { money } from '../format.js';
 
-export class MenuItem extends ViewComponent {
+export class MenuItem extends Component {
 	template() {
 		const { item, onOpen } = this.props;
 

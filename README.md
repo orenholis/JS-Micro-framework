@@ -12,14 +12,14 @@ předávají přímo funkci elementu, takže se nikde neopakuje `nodeName`,
 
 ```js
 import {
-  ViewComponent,
+  Component,
   button,
   div,
   mount,
   strong,
 } from './src/index.js';
 
-class Counter extends ViewComponent {
+class Counter extends Component {
   constructor() {
     super();
     this.count = this.signal(0);
@@ -59,8 +59,9 @@ Každá hodnota přijímaná textem, atributem, vlastností, třídou nebo style
 být statická, přímo signál, nebo odvozená vazba `signal.map(transformace)`.
 Funkce `value(zdroj, transformace)` dělá totéž a přijímá i statickou hodnotu,
 takže komponenta může stejný vstup dostat jako konstantu i jako signál.
-Signál se vytváří funkcí `signal()` nebo v komponentě metodou `this.signal()`;
-`state()` zůstává jako alias.
+Signál se vytváří funkcí `signal()` nebo v komponentě metodou `this.signal()`.
+Odvozenou hodnotu vytváří `this.computed(zdroje, výpočet)`; její odběry
+komponenta při zničení sama uvolní.
 
 Dynamickou strukturu řídí tři konstrukce:
 
@@ -94,10 +95,29 @@ tag('status-panel', 'Připraveno')
   .data('state', 'ready');
 ```
 
-Starší objektový zápis (`{ tag, children, 'on:click' }`) byl z V0 odstraněn,
-aby existoval jediný způsob zápisu šablon. Nízkoúrovňová funkce `element()`
-zůstává v `src/dom.js` pro testy a nestandardní použití, ale není součástí
-veřejného vstupu `index.js`, a proto se nezapočítává do velikosti jádra.
+Pokud část rozhraní potřebuje přímo Web API (například `canvas`), může
+`template()` vrátit skutečný DOM uzel. Obsluhy událostí a další prostředky se
+pak navážou na životní cyklus komponenty metodami `this.listen(uzel, typ,
+obsluha)` a `this.own(úklid)`.
+
+## Veřejné API
+
+| Oblast | Exporty |
+| --- | --- |
+| Komponenty | `Component`, `mount` |
+| Stav | `signal`, `computed` |
+| Šablony | `value`, `show`, `match`, `each`, `tag` a funkce HTML elementů |
+| SVG (`src/svg.js`) | `svg`, `circle`, `path`, … a `svgTag` |
+
+Komponenta je třída odvozená od `Component`, která v metodě `template()`
+vrací svůj podstrom. K dispozici má `this.props`, `this.refs`, `this.root`,
+`this.mounted`, metody `signal`, `computed`, `listen`, `own` a volitelné
+háčky `afterMount()` a `beforeDestroy()`.
+
+Existuje jediný způsob zápisu šablon. Dřívější objektový zápis
+(`{ tag, children, 'on:click' }`), třída `ViewComponent`, alias `state()`
+a nízkoúrovňové funkce `element`, `bind`, `text`, `list`, `when` a `view`
+byly z V0 odstraněny nebo jsou pouze interní.
 
 ## Princip vykreslování
 
@@ -170,7 +190,7 @@ kontrola je součástí `npm run verify`.
 - `dist/constrained-ui.min.js` a sdílený chunk – minifikované jádro;
 - `dist/svg.min.js` – volitelný SVG modul.
 
-Aktuální V0 má 9 614 B minifikovaného jádra (3 799 B gzip, 3 410 B brotli).
+Aktuální V0 má 7 847 B minifikovaného jádra (3 207 B gzip, 2 858 B brotli).
 Volitelný SVG vstup přidává 443 B před kompresí. Hodnoty reprodukuje
 `npm run size`; příkaz současně selže při překročení limitu 10 kB a ověří
 veřejné API čitelné i minifikované distribuce.

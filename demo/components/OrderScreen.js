@@ -1,7 +1,7 @@
-import { ViewComponent, button, div, h2, p, section } from '../../src/index.js';
+import { Component, button, div, h2, p, section } from '../../src/index.js';
 import { CartPanel } from './CartPanel.js';
 
-export class OrderScreen extends ViewComponent {
+export class OrderScreen extends Component {
 	template() {
 		const { cart, error, onBack, onClear, onContinue, onDecrease, onIncrease, onRemove, pending, summary } = this.props;
 

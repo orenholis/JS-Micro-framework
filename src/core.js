@@ -1,5 +1,5 @@
-import { bind, text } from './dom.js';
-import { computed, state } from './state.js';
+import { computed, signal } from './state.js';
+import { view } from './template.js';
 
 // Components mounted during an outer mount wait until the whole tree is inserted.
 const pending = [];
@@ -11,13 +11,11 @@ export function detach(node) {
 	if (!detaching?.contains(node)) node.remove();
 }
 
+/** Resources owned by one component: event listeners and cleanup functions. */
 export class Scope {
 	#cleanups = [];
 	#destroyed = false;
-
-	constructor() {
-		this.events = new AbortController();
-	}
+	#events = new AbortController();
 
 	own(cleanup) {
 		if (typeof cleanup !== 'function') {
@@ -26,32 +24,28 @@ export class Scope {
 
 		if (this.#destroyed) {
 			cleanup();
-			return cleanup;
+		} else {
+			this.#cleanups.push(cleanup);
 		}
 
-		this.#cleanups.push(cleanup);
 		return cleanup;
 	}
 
 	listen(node, type, handler, options = {}) {
-		node.addEventListener(type, handler, { ...options, signal: this.events.signal });
+		node.addEventListener(type, handler, { ...options, signal: this.#events.signal });
 		return handler;
 	}
 
 	destroy() {
 		if (this.#destroyed) return;
 		this.#destroyed = true;
-		this.events.abort();
+		this.#events.abort();
 
-		for (let index = this.#cleanups.length - 1; index >= 0; index -= 1) {
-			this.#cleanups[index]();
+		for (const cleanup of this.#cleanups.reverse()) {
+			cleanup();
 		}
 
 		this.#cleanups.length = 0;
-	}
-
-	get destroyed() {
-		return this.#destroyed;
 	}
 }
 
@@ -66,8 +60,8 @@ export class Component {
 		this.root = null;
 	}
 
-	create() {
-		throw new Error('create() required');
+	template() {
+		throw new Error('template() required');
 	}
 
 	mount(target, before = null) {
@@ -83,8 +77,8 @@ export class Component {
 		mounting += 1;
 
 		try {
-			const root = this.create();
-			if (!(root instanceof Node) || root instanceof DocumentFragment) {
+			const root = view(this, this.template());
+			if (root instanceof DocumentFragment) {
 				throw new TypeError('Invalid component root');
 			}
 
@@ -124,7 +118,7 @@ export class Component {
 			detaching = outer;
 		}
 
-		if (this.root) detach(this.root);
+		detach(this.root);
 		this.refs = Object.create(null);
 		this.root = null;
 		this.#mounted = false;
@@ -133,7 +127,7 @@ export class Component {
 	child(component, target, before = null) {
 		component.mount(target, before);
 		this.#children.add(component);
-		this.scope.own(() => {
+		this.own(() => {
 			component.destroy();
 			this.#children.delete(component);
 		});
@@ -141,19 +135,11 @@ export class Component {
 	}
 
 	signal(initialValue) {
-		return state(initialValue);
+		return signal(initialValue);
 	}
 
 	computed(sources, project) {
 		return computed(sources, project, this.scope);
-	}
-
-	text(source, map = String) {
-		return text(source, { map, scope: this.scope });
-	}
-
-	bind(node, target, source, map = (value) => value) {
-		return bind(node, target, source, { map, scope: this.scope });
 	}
 
 	listen(node, type, handler, options) {

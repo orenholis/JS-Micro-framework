@@ -1,8 +1,8 @@
-import { ViewComponent, button, div, each, h1, nav, p, section, span } from '../../src/index.js';
+import { Component, button, div, each, h1, nav, p, section, span } from '../../src/index.js';
 import { MenuItem } from './MenuItem.js';
 import { PromoBanner } from './PromoBanner.js';
 
-export class Catalog extends ViewComponent {
+export class Catalog extends Component {
 	template() {
 		const { categories, category, empty, error, items, onBuildMenu, onCategorySelect, onItemOpen, onRetry, status, titleRef } = this.props;
 

@@ -1,12 +1,10 @@
-export { Component, Scope, mount } from './core.js';
-export { bind, text } from './dom.js';
+export { Component, mount } from './core.js';
 export {
 	a,
 	article,
 	aside,
 	button,
 	div,
-	ElementBuilder,
 	footer,
 	form,
 	h1,
@@ -38,6 +36,5 @@ export {
 	tr,
 	ul,
 } from './html.js';
-export { computed, isSignal, Signal, signal, state } from './state.js';
-export { list, when } from './collections.js';
-export { each, match, show, value, view, ViewComponent } from './template.js';
+export { computed, signal } from './state.js';
+export { each, match, show, value } from './template.js';

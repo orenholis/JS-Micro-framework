@@ -1,7 +1,7 @@
-import { ViewComponent, button, div, span, strong } from '../../src/index.js';
+import { Component, button, div, span, strong } from '../../src/index.js';
 import { formatItemCount, money } from '../format.js';
 
-export class OrderDock extends ViewComponent {
+export class OrderDock extends Component {
 	template() {
 		const { onOpen, summary } = this.props;
 

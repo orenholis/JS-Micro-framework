@@ -84,8 +84,8 @@ const minifiedDistribution = await import(new URL(`../${core[0]}`, import.meta.u
 for (const distribution of [sourceDistribution, minifiedDistribution]) {
 	if (
 		typeof distribution.mount !== 'function'
-		|| typeof distribution.state !== 'function'
-		|| typeof distribution.ViewComponent !== 'function'
+		|| typeof distribution.signal !== 'function'
+		|| typeof distribution.Component !== 'function'
 	) {
 		throw new Error('Distribution does not expose the required V0 API.');
 	}

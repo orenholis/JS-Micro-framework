@@ -1,3 +1,4 @@
+// Marks a derived binding created by signal.map() or value().
 export const VALUE = Symbol('value');
 
 export class Signal {
@@ -46,25 +47,23 @@ export class Signal {
 	}
 }
 
-export function state(initialValue) {
+export function signal(initialValue) {
 	return new Signal(initialValue);
 }
 
-export { state as signal };
-
-export function isSignal(value) {
-	return value instanceof Signal;
+export function isSignal(candidate) {
+	return candidate instanceof Signal;
 }
 
 export function computed(sources, project, scope) {
 	const sourceList = Array.isArray(sources) ? sources : [sources];
-	const output = state(project(...sourceList.map((source) => source.value)));
-	const refresh = () => {
-		output.value = project(...sourceList.map((source) => source.value));
-	};
+	const read = () => project(...sourceList.map((source) => source.value));
+	const output = signal(read());
 
 	for (const source of sourceList) {
-		const unsubscribe = source.subscribe(refresh, { immediate: false });
+		const unsubscribe = source.subscribe(() => {
+			output.value = read();
+		}, { immediate: false });
 		scope?.own(unsubscribe);
 	}
 

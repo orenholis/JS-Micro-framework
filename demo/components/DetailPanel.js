@@ -1,8 +1,8 @@
-import { ViewComponent, button, div, h2, p, section, span, strong } from '../../src/index.js';
+import { Component, button, div, h2, p, section, span, strong } from '../../src/index.js';
 import { trapTabKey } from '../focus.js';
 import { money } from '../format.js';
 
-export class DetailPanel extends ViewComponent {
+export class DetailPanel extends Component {
 	template() {
 		const { error, item, onAdd, onClose, onRetry, status } = this.props;
 

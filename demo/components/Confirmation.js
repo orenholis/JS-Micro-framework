@@ -1,8 +1,8 @@
-import { ViewComponent, button, div, h2, p, section } from '../../src/index.js';
+import { Component, button, div, h2, p, section } from '../../src/index.js';
 import { trapTabKey } from '../focus.js';
 import { formatItemCount, money } from '../format.js';
 
-export class Confirmation extends ViewComponent {
+export class Confirmation extends Component {
 	template() {
 		const { order, onReset } = this.props;
 

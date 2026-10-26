@@ -1,4 +1,4 @@
-import { ViewComponent, button, div, h2, section, span, strong } from '../../src/index.js';
+import { Component, button, div, h2, section, span, strong } from '../../src/index.js';
 import { menuItems } from '../data.js';
 import { money } from '../format.js';
 
@@ -9,7 +9,7 @@ const steps = [
 	{ key: 'sauce', eyebrow: '4 ze 4', title: 'Vyberte omáčku', ids: [12] },
 ];
 
-class BuilderChoice extends ViewComponent {
+class BuilderChoice extends Component {
 	template() {
 		const { item, itemId, label, onSelect, selection, selectionKey } = this.props;
 
@@ -30,7 +30,7 @@ class BuilderChoice extends ViewComponent {
 	}
 }
 
-export class MenuBuilder extends ViewComponent {
+export class MenuBuilder extends Component {
 	constructor(props) {
 		super(props);
 		this.step = this.signal(0);

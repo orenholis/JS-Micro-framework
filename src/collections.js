@@ -1,115 +1,80 @@
-import { Component, detach } from './core.js';
-import { state } from './state.js';
+import { detach } from './core.js';
+import { signal } from './state.js';
 
-function mountRenderable(renderable, parent, before) {
-	if (renderable instanceof Component) {
-		renderable.mount(parent, before);
-		return { nodes: [renderable.root], destroy: () => renderable.destroy() };
-	}
-
-	if (!(renderable instanceof Node)) {
-		throw new TypeError('Invalid dynamic view');
-	}
-
-	const nodes =
-		renderable instanceof DocumentFragment ? [...renderable.childNodes] : [renderable];
-
-	parent.insertBefore(renderable, before);
-
-	return {
-		nodes,
-		destroy: () => {
-			for (const node of nodes) {
-				detach(node);
-			}
-		},
-	};
-}
-
-function moveBefore(record, parent, cursor) {
-	for (const node of record.nodes) {
-		parent.insertBefore(node, cursor);
-	}
-}
-
-export function when(owner, source, target, factory) {
-	const start = document.createComment('when:start');
-	const end = document.createComment('when:end');
+// Both helpers mount components between two comment markers, so content can be
+// inserted again at the right place without searching among siblings.
+function markers(owner, target, cleanup) {
+	const start = document.createComment('');
+	const end = document.createComment('');
 	target.append(start, end);
-	let current = null;
-
-	const unsubscribe = source.subscribe((value) => {
-		current?.destroy();
-		const renderable = value ? factory(value) : null;
-		current = renderable ? mountRenderable(renderable, target, end) : null;
-	});
 
 	owner.own(() => {
-		unsubscribe();
-		current?.destroy();
+		cleanup();
 		detach(start);
 		detach(end);
 	});
 
-	return { start, end };
+	return end;
+}
+
+export function when(owner, source, target, factory) {
+	let current = null;
+	let unsubscribe = null;
+	const end = markers(owner, target, () => {
+		unsubscribe();
+		current?.destroy();
+	});
+
+	unsubscribe = source.subscribe((value) => {
+		current?.destroy();
+		current = value ? factory(value) : null;
+		current?.mount(target, end);
+	});
 }
 
 export function list(owner, source, target, { key, render }) {
-	const start = document.createComment('list:start');
-	const end = document.createComment('list:end');
-	target.append(start, end);
 	let records = new Map();
+	let unsubscribe = null;
+	const end = markers(owner, target, () => {
+		unsubscribe();
+		for (const record of records.values()) {
+			record.component.destroy();
+		}
+		records.clear();
+	});
 
-	const unsubscribe = source.subscribe((items) => {
-		const nextKeys = new Set();
-		const ordered = [];
+	unsubscribe = source.subscribe((items) => {
+		const next = new Map();
 
 		for (const item of items) {
 			const itemKey = key(item);
-			if (nextKeys.has(itemKey)) {
+			if (next.has(itemKey)) {
 				throw new Error(`Duplicate list key: ${String(itemKey)}`);
 			}
 
-			nextKeys.add(itemKey);
-
 			let record = records.get(itemKey);
 			if (record) {
-				record.value.value = item;
+				record.item.value = item;
 			} else {
-				const value = state(item);
-				const mounted = mountRenderable(render(value, itemKey), target, end);
-				record = { ...mounted, value };
+				const value = signal(item);
+				record = { item: value, component: render(value, itemKey).mount(target, end) };
 			}
 
-			ordered.push([itemKey, record]);
+			next.set(itemKey, record);
 		}
 
 		for (const [itemKey, record] of records) {
-			if (!nextKeys.has(itemKey)) {
-				record.destroy();
+			if (!next.has(itemKey)) {
+				record.component.destroy();
 			}
 		}
 
 		let cursor = end;
-		for (let index = ordered.length - 1; index >= 0; index -= 1) {
-			const record = ordered[index][1];
-			if (record.nodes.at(-1).nextSibling !== cursor) moveBefore(record, target, cursor);
-			cursor = record.nodes[0];
+		for (const { component } of [...next.values()].reverse()) {
+			if (component.root.nextSibling !== cursor) target.insertBefore(component.root, cursor);
+			cursor = component.root;
 		}
 
-		records = new Map(ordered);
+		records = next;
 	});
-
-	owner.own(() => {
-		unsubscribe();
-		for (const record of records.values()) {
-			record.destroy();
-		}
-
-		records.clear();
-		detach(start);
-		detach(end);
-	});
-
-	return { start, end };
 }

@@ -1,10 +1,10 @@
-import { ViewComponent, button, div, h2, p, section, span, strong } from '../../src/index.js';
+import { Component, button, div, h2, p, section, span, strong } from '../../src/index.js';
 import { menuItems } from '../data.js';
 import { money } from '../format.js';
 
 const suggestions = menuItems.filter((item) => [10, 15, 16].includes(item.id));
 
-export class UpsellScreen extends ViewComponent {
+export class UpsellScreen extends Component {
 	template() {
 		const { onAdd, onBack, onContinue } = this.props;
 

@@ -1,5 +1,5 @@
 import {
-	ViewComponent,
+	Component,
 	aside,
 	button,
 	div,
@@ -12,7 +12,7 @@ import {
 import { formatItemCount, money } from '../format.js';
 import { CartRow } from './CartRow.js';
 
-export class CartPanel extends ViewComponent {
+export class CartPanel extends Component {
 	template() {
 		const { cart, error, onClear, onConfirm, onDecrease, onIncrease, onRemove, pending, summary } = this.props;
 

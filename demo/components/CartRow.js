@@ -1,5 +1,5 @@
 import {
-	ViewComponent,
+	Component,
 	article,
 	button,
 	div,
@@ -9,7 +9,7 @@ import {
 } from '../../src/index.js';
 import { money } from '../format.js';
 
-export class CartRow extends ViewComponent {
+export class CartRow extends Component {
 	template() {
 		const { row, pending, onIncrease, onDecrease, onRemove } = this.props;
 

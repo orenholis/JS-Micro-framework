@@ -1,6 +1,6 @@
-import { ViewComponent, div, header, small, span, strong } from '../../src/index.js';
+import { Component, div, header, small, span, strong } from '../../src/index.js';
 
-export class TopBar extends ViewComponent {
+export class TopBar extends Component {
 	template() {
 		return header(
 			div(

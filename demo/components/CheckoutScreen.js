@@ -1,7 +1,7 @@
-import { ViewComponent, button, div, h2, p, section, span, strong } from '../../src/index.js';
+import { Component, button, div, h2, p, section, span, strong } from '../../src/index.js';
 import { formatItemCount, money } from '../format.js';
 
-export class CheckoutScreen extends ViewComponent {
+export class CheckoutScreen extends Component {
 	constructor(props) {
 		super(props);
 		this.step = this.signal(0);

@@ -1,4 +1,4 @@
-import { ViewComponent, button, div, p, section, span, strong } from '../../src/index.js';
+import { Component, button, div, p, section, span, strong } from '../../src/index.js';
 
 function formatCountdown(seconds) {
 	const minutes = Math.floor(seconds / 60);
@@ -6,7 +6,7 @@ function formatCountdown(seconds) {
 	return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
 }
 
-export class PromoBanner extends ViewComponent {
+export class PromoBanner extends Component {
 	constructor(props) {
 		super(props);
 		this.remaining = this.signal(9 * 60 + 59);

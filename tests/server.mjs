@@ -192,7 +192,7 @@ try {
 		assert.match(applicationResponse.headers.get('content-type'), /text\/javascript/);
 		assert.match(application, /from '\.\.\/src\/index\.js'/);
 		assert.equal(frameworkResponse.status, 200);
-		assert.match(framework, /export \{ Component, Scope, mount \}/);
+		assert.match(framework, /export \{ Component, mount \}/);
 	});
 
 	await test('server nezpřístupní databázi jako statický soubor', async () => {

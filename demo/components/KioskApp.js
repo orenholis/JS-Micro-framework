@@ -1,4 +1,4 @@
-import { ViewComponent, div, main, match, show } from '../../src/index.js';
+import { Component, div, main, match, show } from '../../src/index.js';
 import { ApiError, catalogApi } from '../api.js';
 import { addCartItem, changeCartItemQuantity, clearCart, removeCartItem, summarizeCart } from '../state.js';
 import { Catalog } from './Catalog.js';
@@ -11,7 +11,7 @@ import { OrderScreen } from './OrderScreen.js';
 import { TopBar } from './TopBar.js';
 import { UpsellScreen } from './UpsellScreen.js';
 
-export class KioskApp extends ViewComponent {
+export class KioskApp extends Component {
 	constructor({ api = catalogApi } = {}) {
 		super();
 		this.api = api;
