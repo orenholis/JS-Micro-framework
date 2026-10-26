@@ -634,4 +634,34 @@ test('každá exportovaná HTML funkce vytvoří element svého jména', () => {
 	}
 });
 
+test('show a match přijmou signal.map a nevytvoří podstrom znovu při stejném výsledku', () => {
+	const count = signal(1);
+	let renders = 0;
+
+	class Parity extends Component {
+		template() {
+			return div(
+				show(count.map((value) => value > 0), () => {
+					renders += 1;
+					return span('kladné');
+				}),
+				match(count.map((value) => (value % 2 === 0 ? 'even' : 'odd')), {
+					even: () => span('sudé'),
+					odd: () => span('liché'),
+				}),
+			);
+		}
+	}
+
+	const view = mount(new Parity(), host());
+	count.value = 3;
+	count.value = 5;
+	assert(renders === 1, `Podstrom se vytvořil ${renders}krát.`);
+	assert(view.root.textContent === 'kladnéliché', 'Výsledek neodpovídá stavu.');
+	count.value = 4;
+	assert(view.root.textContent === 'kladnésudé', 'match nereagoval na změnu odvozené hodnoty.');
+	view.destroy();
+	assert(count.subscriberCount === 0, 'Odvozené zdroje neuvolnily odběr.');
+});
+
 console.log(`\n${passed} smoke testů prošlo.`);

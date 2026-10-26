@@ -64,7 +64,18 @@ await test('klient odešle objednávku pouze s identifikátory a množstvím', a
 	});
 	const controller = new AbortController();
 	const order = await api.createOrder(
-		[{ id: 1, name: 'Cena z klienta se nesmí použít', price: 1, quantity: 2 }],
+		[
+			{ key: 'item:1', type: 'item', id: 1, name: 'Cena z klienta se nesmí použít', price: 1, quantity: 2 },
+			{
+				key: 'menu:1-9-13-0',
+				type: 'menu',
+				id: 1,
+				name: 'Menu Double Smash',
+				price: 1,
+				selection: { burger: 1, side: 9, drink: 13, sauce: 0 },
+				quantity: 1,
+			},
+		],
 		{ signal: controller.signal },
 	);
 
@@ -75,6 +86,7 @@ await test('klient odešle objednávku pouze s identifikátory a množstvím', a
 	assert.equal(request.options.signal, controller.signal);
 	assert.deepEqual(JSON.parse(request.options.body), {
 		items: [{ menuItemId: 1, quantity: 2 }],
+		menus: [{ burger: 1, side: 9, drink: 13, sauce: 0, quantity: 1 }],
 	});
 	assert.equal(order.id, 12);
 });

@@ -174,6 +174,42 @@ try {
 		database.close();
 	});
 
+	await test('API ocení zvýhodněné menu a uloží jeho složení', async () => {
+		const response = await fetch(`${baseUrl}/api/orders`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				items: [{ menuItemId: 6, quantity: 1 }],
+				menus: [{ burger: 1, side: 9, drink: 13, sauce: 12, quantity: 2 }],
+			}),
+		});
+		const order = await response.json();
+
+		assert.equal(response.status, 201);
+		assert.deepEqual({ count: order.count, total: order.total }, { count: 3, total: 159 + 2 * 259 });
+
+		const database = await openKioskDatabase(databasePath);
+		const menus = database
+			.prepare('SELECT name, unit_price AS unitPrice, separate_price AS separatePrice, quantity, components FROM order_menus WHERE order_id = ?')
+			.all(order.id)
+			.map((row) => ({ ...row, components: JSON.parse(row.components).map((item) => item.name) }));
+		assert.deepEqual(menus, [{
+			name: 'Menu Double Smash',
+			unitPrice: 259,
+			separatePrice: 312,
+			quantity: 2,
+			components: ['Double Smash', 'Hranolky', 'Cola', 'Kečup'],
+		}]);
+		database.close();
+
+		const invalidResponse = await fetch(`${baseUrl}/api/orders`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ menus: [{ burger: 3, side: 9, drink: 13, sauce: 0, quantity: 1 }] }),
+		});
+		assert.equal(invalidResponse.status, 400, 'Burger mimo nabídku menu musí být odmítnut.');
+	});
+
 	await test('server nadále poskytuje kioskovou aplikaci', async () => {
 		const response = await fetch(`${baseUrl}/demo/`);
 		const html = await response.text();

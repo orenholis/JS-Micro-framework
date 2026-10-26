@@ -13,10 +13,33 @@ export function value(source, map = identity) {
 	return isSignal(source) ? source.map(map) : map(source);
 }
 
-export function each(source, { key, render }) {
-	if (!isSignal(source)) {
-		throw new TypeError('each: Signal required');
+/**
+ * Zdroj pro show/match/each: signál, nebo odvozená vazba signal.map().
+ * Odvozená vazba oznamuje změnu jen tehdy, když se změní její výsledek.
+ */
+function asSource(candidate, name) {
+	if (isSignal(candidate)) return candidate;
+
+	if (!candidate?.[VALUE]) {
+		throw new TypeError(`${name}: Signal required`);
 	}
+
+	const { source, map } = candidate;
+	return {
+		subscribe(subscriber, options) {
+			let last = asSource;
+			return source.subscribe((value) => {
+				const next = map(value);
+				if (Object.is(next, last)) return;
+				last = next;
+				subscriber(next);
+			}, options);
+		},
+	};
+}
+
+export function each(candidate, { key, render }) {
+	const source = asSource(candidate, 'each');
 
 	if (typeof key !== 'function' || typeof render !== 'function') {
 		throw new TypeError('each: key and render required');
@@ -25,10 +48,8 @@ export function each(source, { key, render }) {
 	return { [EACH]: true, source, key, render };
 }
 
-export function show(source, render) {
-	if (!isSignal(source)) {
-		throw new TypeError('show: Signal required');
-	}
+export function show(candidate, render) {
+	const source = asSource(candidate, 'show');
 
 	if (typeof render !== 'function') {
 		throw new TypeError('show: render required');

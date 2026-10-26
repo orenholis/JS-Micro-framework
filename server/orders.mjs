@@ -1,8 +1,14 @@
+import { menuKey, priceMenu } from '../demo/menu-deal.js';
+
 export class OrderValidationError extends Error {}
 
+function isQuantity(value) {
+	return Number.isInteger(value) && value > 0 && value <= 99;
+}
+
 function validateItems(items) {
-	if (!Array.isArray(items) || items.length === 0) {
-		throw new OrderValidationError('Order must contain at least one item.');
+	if (!Array.isArray(items)) {
+		throw new OrderValidationError('Order items must be an array.');
 	}
 
 	if (items.length > 50) {
@@ -17,9 +23,7 @@ function validateItems(items) {
 			|| item === null
 			|| !Number.isInteger(item.menuItemId)
 			|| item.menuItemId <= 0
-			|| !Number.isInteger(item.quantity)
-			|| item.quantity <= 0
-			|| item.quantity > 99
+			|| !isQuantity(item.quantity)
 		) {
 			throw new OrderValidationError('Order item is invalid.');
 		}
@@ -32,8 +36,41 @@ function validateItems(items) {
 	}
 }
 
+function validateMenus(menus) {
+	if (!Array.isArray(menus)) {
+		throw new OrderValidationError('Order menus must be an array.');
+	}
+
+	if (menus.length > 20) {
+		throw new OrderValidationError('Order contains too many menus.');
+	}
+
+	const keys = new Set();
+
+	for (const menu of menus) {
+		if (typeof menu !== 'object' || menu === null || !isQuantity(menu.quantity)) {
+			throw new OrderValidationError('Order menu is invalid.');
+		}
+
+		const key = menuKey(menu);
+		if (keys.has(key)) {
+			throw new OrderValidationError('Order contains a duplicate menu.');
+		}
+
+		keys.add(key);
+	}
+}
+
 export function createOrder(database, payload) {
-	validateItems(payload?.items);
+	const items = payload?.items ?? [];
+	const menus = payload?.menus ?? [];
+
+	validateItems(items);
+	validateMenus(menus);
+
+	if (items.length === 0 && menus.length === 0) {
+		throw new OrderValidationError('Order must contain at least one item.');
+	}
 
 	const findMenuItem = database.prepare(`
     SELECT id, name, price
@@ -48,7 +85,12 @@ export function createOrder(database, payload) {
     INSERT INTO order_items (order_id, menu_item_id, name, unit_price, quantity)
     VALUES (?, ?, ?, ?, ?)
   `);
-	const selectedItems = payload.items.map((item) => {
+	const insertOrderMenu = database.prepare(`
+    INSERT INTO order_menus (order_id, position, name, unit_price, separate_price, quantity, components)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+	const selectedItems = items.map((item) => {
 		const menuItem = findMenuItem.get(item.menuItemId);
 
 		if (!menuItem) {
@@ -57,8 +99,20 @@ export function createOrder(database, payload) {
 
 		return { ...menuItem, quantity: item.quantity };
 	});
-	const count = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
-	const total = selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+	const selectedMenus = menus.map((menu) => {
+		const priced = priceMenu(menu, (id) => findMenuItem.get(id));
+
+		if (!priced) {
+			throw new OrderValidationError('Order menu has an invalid composition.');
+		}
+
+		return { ...priced, quantity: menu.quantity };
+	});
+
+	const lines = [...selectedItems, ...selectedMenus];
+	const count = lines.reduce((sum, line) => sum + line.quantity, 0);
+	const total = lines.reduce((sum, line) => sum + line.price * line.quantity, 0);
 
 	database.exec('BEGIN');
 
@@ -69,6 +123,18 @@ export function createOrder(database, payload) {
 		for (const item of selectedItems) {
 			insertOrderItem.run(orderId, item.id, item.name, item.price, item.quantity);
 		}
+
+		selectedMenus.forEach((menu, position) => {
+			insertOrderMenu.run(
+				orderId,
+				position,
+				menu.name,
+				menu.price,
+				menu.separatePrice,
+				menu.quantity,
+				JSON.stringify(menu.components),
+			);
+		});
 
 		const order = database
 			.prepare('SELECT id, status, total, created_at AS createdAt FROM orders WHERE id = ?')

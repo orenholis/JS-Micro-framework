@@ -73,6 +73,10 @@ Dynamickou strukturu řídí tři konstrukce:
   dostává položku jako signál, takže se změna dat promítne do existujícího
   řádku bez jeho nahrazení.
 
+Zdrojem pro `show`, `match` i `each` může být signál nebo odvozená vazba
+`signal.map(...)`. Odvozená vazba podstrom znovu nevytvoří, dokud se její
+výsledek nezmění.
+
 Reference `.ref(name)` uvnitř `show`, `match` nebo `each` se uloží do
 `this.refs` komponenty, která šablonu vrátila.
 
@@ -151,10 +155,16 @@ Demonstrační aplikace používá vlastní značku BITE a realistický katalog 
 lokálně v jednom obrazovém atlasu, takže kiosk za běhu nestahuje externí
 obrázky ani jiná data.
 
-Objednávkový průchod odpovídá samoobslužnému kiosku: katalog doplňuje spodní
-souhrnná lišta, samostatná obrazovka objednávky, nabídka doplňkových produktů,
-volba konzumace na místě nebo s sebou a platební krok. Časově omezená nabídka
-otevírá čtyřkrokové sestavení menu z burgeru, přílohy, nápoje a omáčky.
+Kiosek je navržený pro portrétní dotykovou obrazovku 1080 × 1920 px a na menší
+obrazovky se úměrně zmenšuje. Průchod: úvodní volba na místě / s sebou,
+katalog s úzkým panelem kategorií a spodní lištou objednávky, detail produktu
+jako spodní panel s množstvím, čtyřkrokové sestavení zvýhodněného menu,
+přehled objednávky, volba platby a potvrzení s číslem objednávky, které se
+po 20 sekundách samo vrátí na úvod.
+
+Zvýhodněné menu je v objednávce jedna položka se složením, cenou menu a
+úsporou oproti nákupu složek zvlášť. Pravidla menu (povolené složky, příplatky,
+cena) jsou v `demo/menu-deal.js` a sdílí je kiosek i server.
 
 Poté lze otevřít:
 
@@ -164,9 +174,10 @@ Poté lze otevřít:
 
 Katalog poskytují endpointy `GET /api/categories`, `GET /api/menu-items`,
 `GET /api/menu-items?category=<id>` a `GET /api/menu-items/<id>`. Kiosk odesílá
-potvrzenou objednávku na `POST /api/orders`. Server znovu ověří položky a
-množství, cenu vypočítá z aktuálních dat katalogu a objednávku i její řádky
-uloží v jedné databázové transakci.
+potvrzenou objednávku na `POST /api/orders` jako `items` (produkty) a `menus`
+(složení menu). Server znovu ověří položky, množství i složení menu, cenu
+vypočítá z aktuálních dat katalogu a objednávku včetně řádků a menu uloží
+v jedné databázové transakci.
 
 Úplné lokální ověření včetně produkčního buildu a velikosti:
 
@@ -190,7 +201,7 @@ kontrola je součástí `npm run verify`.
 - `dist/constrained-ui.min.js` a sdílený chunk – minifikované jádro;
 - `dist/svg.min.js` – volitelný SVG modul.
 
-Aktuální V0 má 7 847 B minifikovaného jádra (3 207 B gzip, 2 858 B brotli).
+Aktuální V0 má 7 985 B minifikovaného jádra (3 284 B gzip).
 Volitelný SVG vstup přidává 443 B před kompresí. Hodnoty reprodukuje
 `npm run size`; příkaz současně selže při překročení limitu 10 kB a ověří
 veřejné API čitelné i minifikované distribuce.

@@ -13,3 +13,15 @@ export function trapTabKey(event, elements) {
 	available[nextIndex].focus();
 	return true;
 }
+
+/** Viditelná a povolená tlačítka uvnitř uzlu v pořadí dokumentu. */
+export function focusableButtons(root) {
+	const result = [];
+	const visit = (node) => {
+		if (node.hidden) return;
+		if (node.nodeName === 'BUTTON' && !node.disabled) result.push(node);
+		for (const child of node.childNodes) visit(child);
+	};
+	visit(root);
+	return result;
+}

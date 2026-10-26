@@ -34,3 +34,14 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 CREATE INDEX IF NOT EXISTS menu_items_category_idx
 	ON menu_items(category_id, position);
+
+CREATE TABLE IF NOT EXISTS order_menus (
+	order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+	position INTEGER NOT NULL,
+	name TEXT NOT NULL,
+	unit_price INTEGER NOT NULL CHECK (unit_price >= 0),
+	separate_price INTEGER NOT NULL CHECK (separate_price >= 0),
+	quantity INTEGER NOT NULL CHECK (quantity > 0),
+	components TEXT NOT NULL,
+	PRIMARY KEY (order_id, position)
+);

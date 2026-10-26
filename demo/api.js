@@ -43,10 +43,12 @@ export function createCatalogApi(fetchImplementation = fetch) {
 		createOrder(cart, options = {}) {
 			return request('/api/orders', {
 				body: {
-					items: cart.map((item) => ({
-						menuItemId: item.id,
-						quantity: item.quantity,
-					})),
+					items: cart
+						.filter((row) => row.type === 'item')
+						.map((row) => ({ menuItemId: row.id, quantity: row.quantity })),
+					menus: cart
+						.filter((row) => row.type === 'menu')
+						.map((row) => ({ ...row.selection, quantity: row.quantity })),
 				},
 				method: 'POST',
 				signal: options.signal,

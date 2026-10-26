@@ -1,15 +1,17 @@
-import { Component, div, main, match, show } from '../../src/index.js';
+import { Component, div, match, show } from '../../src/index.js';
 import { ApiError, catalogApi } from '../api.js';
-import { addCartItem, changeCartItemQuantity, clearCart, removeCartItem, summarizeCart } from '../state.js';
-import { Catalog } from './Catalog.js';
-import { CheckoutScreen } from './CheckoutScreen.js';
-import { Confirmation } from './Confirmation.js';
-import { DetailPanel } from './DetailPanel.js';
+import { menuItems } from '../data.js';
+import { priceMenu } from '../menu-deal.js';
+import { addCartItem, addCartMenu, changeCartItemQuantity, clearCart, removeCartItem, summarizeCart } from '../state.js';
+import { CatalogScreen } from './CatalogScreen.js';
+import { ConfirmationScreen } from './ConfirmationScreen.js';
 import { MenuBuilder } from './MenuBuilder.js';
-import { OrderDock } from './OrderDock.js';
 import { OrderScreen } from './OrderScreen.js';
-import { TopBar } from './TopBar.js';
-import { UpsellScreen } from './UpsellScreen.js';
+import { PaymentScreen } from './PaymentScreen.js';
+import { ProductSheet } from './ProductSheet.js';
+import { WelcomeScreen } from './WelcomeScreen.js';
+
+const findItem = (id) => menuItems.find((item) => item.id === id);
 
 export class KioskApp extends Component {
 	constructor({ api = catalogApi } = {}) {
@@ -30,8 +32,9 @@ export class KioskApp extends Component {
 		this.detailError = this.signal('');
 		this.cart = this.signal([]);
 		this.cartSummary = this.computed(this.cart, summarizeCart);
-		this.screen = this.signal('catalog');
-		this.builderOpen = this.signal(false);
+		this.screen = this.signal('welcome');
+		this.builder = this.signal(null);
+		this.returnToCatalog = false;
 		this.orderType = this.signal('eat-in');
 		this.payment = this.signal('card');
 		this.orderStatus = this.signal('idle');
@@ -45,7 +48,6 @@ export class KioskApp extends Component {
 		this.detailTrigger = null;
 		this.orderRequest = null;
 		this.orderRequestId = 0;
-		this.catalogTitle = null;
 	}
 
 	afterMount() {
@@ -192,25 +194,15 @@ export class KioskApp extends Component {
 		if (this.detailItemId.value !== null) this.loadDetail(this.detailItemId.value);
 	}
 
-	addToCart(item) {
+	addToCart(item, quantity = 1) {
 		this.clearOrderError();
-		this.cart.value = addCartItem(this.cart.value, item);
+		this.cart.value = addCartItem(this.cart.value, item, quantity);
 		this.closeDetail();
 	}
 
-	changeQuantity(itemId, delta) {
+	changeQuantity(key, delta) {
 		this.clearOrderError();
-		this.cart.value = changeCartItemQuantity(this.cart.value, itemId, delta);
-	}
-
-	removeFromCart(itemId) {
-		this.clearOrderError();
-		this.cart.value = removeCartItem(this.cart.value, itemId);
-	}
-
-	clearCart() {
-		this.clearOrderError();
-		this.cart.value = clearCart(this.cart.value);
+		this.cart.value = changeCartItemQuantity(this.cart.value, key, delta);
 	}
 
 	clearOrderError() {
@@ -218,13 +210,49 @@ export class KioskApp extends Component {
 		this.orderError.value = '';
 	}
 
-	addMenuToCart(items) {
+	openMenuBuilder(burgerId) {
+		this.closeDetail();
+		this.builder.value = { selection: { burger: burgerId } };
+	}
+
+	editMenu(row) {
+		this.builder.value = { selection: row.selection, replaceKey: row.key, quantity: row.quantity };
+	}
+
+	completeMenu(selection, initial) {
+		const menu = priceMenu(selection, findItem);
+		if (!menu) return;
+
 		this.clearOrderError();
-		this.cart.value = items.reduce((cart, item) => addCartItem(cart, item), this.cart.value);
-		this.builderOpen.value = false;
+		const quantity = initial?.quantity ?? 1;
+		const cart = initial?.replaceKey ? removeCartItem(this.cart.value, initial.replaceKey) : this.cart.value;
+		this.cart.value = addCartMenu(cart, menu, selection, quantity);
+		this.builder.value = null;
+	}
+
+	startOrder(type) {
+		this.orderType.value = type;
+		this.returnToCatalog = false;
+		this.screen.value = 'catalog';
+	}
+
+	toggleOrderType() {
+		this.orderType.value = this.orderType.value === 'eat-in' ? 'takeaway' : 'eat-in';
+	}
+
+	cancelOrder() {
+		this.orderRequest?.abort();
+		this.closeDetail();
+		this.builder.value = null;
+		this.cart.value = clearCart(this.cart.value);
+		this.payment.value = 'card';
+		this.orderStatus.value = 'idle';
+		this.orderError.value = '';
+		this.screen.value = 'welcome';
 	}
 
 	showScreen(screen) {
+		this.returnToCatalog = screen === 'catalog';
 		this.screen.value = screen;
 	}
 
@@ -247,8 +275,7 @@ export class KioskApp extends Component {
 
 			this.cart.value = [];
 			this.orderStatus.value = 'idle';
-			this.screen.value = 'catalog';
-			this.confirmation.value = order;
+			this.confirmation.value = { order, method: this.payment.value };
 		} catch (error) {
 			if (error.name === 'AbortError' || !this.mounted || requestId !== this.orderRequestId) {
 				return;
@@ -261,103 +288,95 @@ export class KioskApp extends Component {
 		}
 	}
 
-	template() {
-		return main(
-			new TopBar(),
+	finishOrder() {
+		this.confirmation.value = null;
+		this.payment.value = 'card';
+		this.screen.value = 'welcome';
+	}
 
-			div(
-				new Catalog({
+	template() {
+		return div(
+			match(this.screen, {
+				welcome: () => new WelcomeScreen({ onStart: (type) => this.startOrder(type) }),
+				catalog: () => new CatalogScreen({
 					categories: this.categories,
 					category: this.category,
 					empty: this.catalogEmpty,
 					error: this.catalogError,
+					focusTitle: this.returnToCatalog,
+					header: {
+						onCancel: () => this.cancelOrder(),
+						onToggleType: () => this.toggleOrderType(),
+					},
 					items: this.visibleItems,
+					orderType: this.orderType,
 					status: this.catalogStatus,
-					titleRef: (node) => {
-						this.catalogTitle = node;
-					},
+					summary: this.cartSummary,
+					onBuildMenu: (burgerId) => this.openMenuBuilder(burgerId),
 					onCategorySelect: (categoryId) => this.selectCategory(categoryId),
-					onBuildMenu: () => {
-						this.builderOpen.value = true;
-					},
 					onItemOpen: (item) => this.openDetail(item),
+					onOpenOrder: () => this.showScreen('order'),
 					onRetry: () => this.retryCatalog(),
 				}),
-			).class('layout'),
-
-			new OrderDock({
-				summary: this.cartSummary,
-				onOpen: () => this.showScreen('order'),
-			}),
-
-			show(
-				this.builderOpen,
-				() => new MenuBuilder({
-					onClose: () => {
-						this.builderOpen.value = false;
-					},
-					onComplete: (items) => this.addMenuToCart(items),
-				}),
-			),
-
-			match(this.screen, {
 				order: () => new OrderScreen({
 					cart: this.cart,
 					error: this.orderError,
+					orderType: this.orderType,
 					pending: this.orderPending,
 					summary: this.cartSummary,
-					onBack: () => this.showScreen('catalog'),
-					onClear: () => this.clearCart(),
-					onContinue: () => this.showScreen('upsell'),
-					onIncrease: (itemId) => this.changeQuantity(itemId, 1),
-					onDecrease: (itemId) => this.changeQuantity(itemId, -1),
-					onRemove: (itemId) => this.removeFromCart(itemId),
-				}),
-				upsell: () => new UpsellScreen({
 					onAdd: (item) => this.addToCart(item),
-					onBack: () => this.showScreen('order'),
-					onContinue: () => this.showScreen('checkout'),
+					onBack: () => this.showScreen('catalog'),
+					onContinue: () => this.showScreen('payment'),
+					onDecrease: (key) => this.changeQuantity(key, -1),
+					onEditMenu: (row) => this.editMenu(row),
+					onIncrease: (key) => this.changeQuantity(key, 1),
 				}),
-				checkout: () => new CheckoutScreen({
-					onBack: () => this.showScreen('upsell'),
-					onConfirm: () => this.confirmOrder(),
-					onOrderType: (type) => {
-						this.orderType.value = type;
-					},
-					onPayment: (method) => {
-						this.payment.value = method;
-					},
+				payment: () => new PaymentScreen({
+					error: this.orderError,
 					orderType: this.orderType,
 					payment: this.payment,
 					pending: this.orderPending,
 					summary: this.cartSummary,
+					onBack: () => this.showScreen('order'),
+					onConfirm: () => this.confirmOrder(),
+					onPayment: (method) => {
+						this.payment.value = method;
+					},
 				}),
 			}),
 
 			show(
 				this.detailItemId,
-				() =>
-					new DetailPanel({
-						error: this.detailError,
-						item: this.detailItem,
-						status: this.detailStatus,
-						onAdd: (selected) => this.addToCart(selected),
-						onClose: () => this.closeDetail(),
-						onRetry: () => this.retryDetail(),
-					}),
+				() => new ProductSheet({
+					error: this.detailError,
+					item: this.detailItem,
+					status: this.detailStatus,
+					onAdd: (item, quantity) => this.addToCart(item, quantity),
+					onClose: () => this.closeDetail(),
+					onMakeMenu: (burgerId) => this.openMenuBuilder(burgerId),
+					onRetry: () => this.retryDetail(),
+				}),
+			),
+
+			show(
+				this.builder,
+				(initial) => new MenuBuilder({
+					initial,
+					onClose: () => {
+						this.builder.value = null;
+					},
+					onComplete: (selection, origin) => this.completeMenu(selection, origin),
+				}),
 			),
 
 			show(
 				this.confirmation,
-				(order) =>
-					new Confirmation({
-						order,
-						onReset: () => {
-							this.confirmation.value = null;
-							this.catalogTitle?.focus();
-						},
-					}),
+				({ order, method }) => new ConfirmationScreen({
+					method,
+					order,
+					onReset: () => this.finishOrder(),
+				}),
 			),
-		).class('kiosk-shell');
+		).class('kiosk');
 	}
 }
