@@ -364,6 +364,27 @@ findButton(app.root, 'Zrušit objednávku').click();
 assert.equal(app.screen.value, 'welcome');
 assert.deepEqual(app.cart.value, []);
 
+findButtonIncluding(app.root, 'Na místě').click();
+findButton(app.root, 'Sestavit menu').click();
+findButton(app.root, 'Pokračovat').click();
+findButton(app.root, 'Vybrat: Hranolky').click();
+findButton(app.root, 'Pokračovat').click();
+findButton(app.root, 'Vybrat: Cola').click();
+findButton(app.root, 'Pokračovat').click();
+findButton(app.root, 'Vybrat: Kečup').click();
+findButton(app.root, 'Přidat menu do objednávky').click();
+assert.equal(app.cart.value[0].type, 'menu');
+findButton(app.root, 'Způsob: na místě. Klepnutím změníte.').click();
+assert.equal(app.orderType.value, 'takeaway');
+assert.ok(app.root.textContent.includes('S sebou · 1 položka'), 'Lišta objednávky neukazuje změněný způsob.');
+findProduct(app.root, 'Double Smash').click();
+await settle();
+findButton(app.root, 'Zrušit objednávku').click();
+assert.equal(app.detailItemId.value, null, 'Zrušení nezavřelo detail produktu.');
+assert.equal(app.builder.value, null);
+assert.deepEqual(app.cart.value, []);
+assert.equal(app.screen.value, 'welcome');
+
 app.destroy();
 assert.equal(app.cart.subscriberCount, 0);
 assert.equal(app.detailStatus.subscriberCount, 0);
