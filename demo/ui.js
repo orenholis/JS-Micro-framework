@@ -17,7 +17,7 @@ const ICONS = {
 /** Liniová ikona z volitelného SVG modulu frameworku. */
 export function icon(name, className) {
 	return svg(...ICONS[name])
-		.class(...['icon', className].filter(Boolean))
+		.class('icon', className)
 		.attr('viewBox', '0 0 64 64')
 		.attr('fill', 'none')
 		.attr('stroke', 'currentColor')
@@ -30,7 +30,7 @@ export function icon(name, className) {
 /** Fotografie produktu z lokálního atlasu. */
 export function productImage(itemId, className) {
 	return span()
-		.class(...['product-image', className].filter(Boolean))
+		.class('product-image', className)
 		.attr('data-menu-id', itemId)
 		.aria('hidden', 'true');
 }

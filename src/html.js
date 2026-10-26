@@ -20,8 +20,12 @@ export class ElementBuilder {
 		this.content = [];
 	}
 
+	/**
+	 * .class('a', 'b') přidá statické třídy; .class('a', podmínka) třídu
+	 * přepíná. Chybějící druhý argument (undefined, null) se ignoruje.
+	 */
 	class(name, condition) {
-		if (arguments.length === 2 && typeof condition !== 'string') {
+		if (arguments.length === 2 && condition != null && typeof condition !== 'string') {
 			this.properties[`class:${name}`] = condition;
 		} else {
 			addClass(this, [...arguments]);

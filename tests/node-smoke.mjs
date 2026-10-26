@@ -664,4 +664,18 @@ test('show a match přijmou signal.map a nevytvoří podstrom znovu při stejné
 	assert(count.subscriberCount === 0, 'Odvozené zdroje neuvolnily odběr.');
 });
 
+test('class s chybějícím druhým argumentem přidá jen statickou třídu', () => {
+	const optional = undefined;
+
+	class Tile extends Component {
+		template() {
+			return div().class('tile', optional).class('extra', null);
+		}
+	}
+
+	const tile = mount(new Tile(), host());
+	assert(tile.root.className === 'tile extra', `Neočekávané třídy: ${tile.root.className}`);
+	tile.destroy();
+});
+
 console.log(`\n${passed} smoke testů prošlo.`);
