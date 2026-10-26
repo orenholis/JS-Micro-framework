@@ -1220,6 +1220,22 @@ p {
 	grid-column: 1 / -1;
 }
 
+/* Jednoduchý produkt má krokovač na stejném řádku jako název a cenu. */
+.cart-line:not(.is-menu) {
+	grid-template-columns: auto minmax(0, 1fr) auto auto;
+}
+
+.cart-line:not(.is-menu) .cart-line__actions {
+	grid-column: auto;
+	order: 3;
+}
+
+.cart-line:not(.is-menu) .cart-line__prices {
+	order: 4;
+	align-self: center;
+	min-width: calc(130 * var(--u));
+}
+
 .cart-line__edit {
 	min-height: calc(88 * var(--u));
 	margin-right: auto;
