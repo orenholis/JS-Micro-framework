@@ -7,6 +7,7 @@ const ICONS = {
 	plus: [path().attr('d', 'M32 14v36M14 32h36')],
 	minus: [path().attr('d', 'M14 32h36')],
 	close: [path().attr('d', 'M18 18l28 28M46 18L18 46')],
+	forward: [path().attr('d', 'M26 14l18 18-18 18')],
 	back: [path().attr('d', 'M38 14L20 32l18 18')],
 	check: [path().attr('d', 'M14 33l11 11 25-26')],
 	card: [rect().attr('x', 6).attr('y', 14).attr('width', 52).attr('height', 36).attr('rx', 6), path().attr('d', 'M6 24h52M14 40h12')],
@@ -27,11 +28,13 @@ export function icon(name, className) {
 		.aria('hidden', 'true');
 }
 
-/** Fotografie produktu z lokálního atlasu. */
+/**
+ * Fotografie produktu z lokálního atlasu. Snímky v atlasu jsou čtvercové,
+ * proto se vykreslí jako čtverec a rámeček libovolného tvaru je ořízne.
+ */
 export function productImage(itemId, className) {
-	return span()
+	return span(span().class('product-image__photo').attr('data-menu-id', itemId))
 		.class('product-image', className)
-		.attr('data-menu-id', itemId)
 		.aria('hidden', 'true');
 }
 

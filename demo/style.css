@@ -201,8 +201,7 @@ p {
 	background: transparent;
 }
 
-.saving-badge,
-.count-badge {
+.saving-badge {
 	display: inline-flex;
 	align-items: center;
 	align-self: flex-start;
@@ -217,13 +216,6 @@ p {
 	white-space: nowrap;
 	border: 1px solid var(--accent);
 	color: var(--accent);
-}
-
-.count-badge {
-	min-width: calc(48 * var(--u));
-	justify-content: center;
-	color: var(--accent);
-	background: #fff;
 }
 
 .form-error {
@@ -266,60 +258,67 @@ p {
 /* Fotografie produktů z atlasu */
 
 .product-image {
-	display: block;
+	display: grid;
+	place-items: center;
 	flex-shrink: 0;
+	overflow: hidden;
 	background-color: #ece8e2;
+}
+
+.product-image__photo {
+	width: 100%;
+	aspect-ratio: 1;
 	background-image: url('./assets/menu-atlas.webp');
 	background-repeat: no-repeat;
 	background-size: 400% 400%;
 }
 
-.product-image[data-menu-id='1'] {
+.product-image__photo[data-menu-id='1'] {
 	background-position: 0 0;
 }
-.product-image[data-menu-id='2'] {
+.product-image__photo[data-menu-id='2'] {
 	background-position: 33.333% 0;
 }
-.product-image[data-menu-id='3'] {
+.product-image__photo[data-menu-id='3'] {
 	background-position: 66.667% 0;
 }
-.product-image[data-menu-id='4'] {
+.product-image__photo[data-menu-id='4'] {
 	background-position: 100% 0;
 }
-.product-image[data-menu-id='5'] {
+.product-image__photo[data-menu-id='5'] {
 	background-position: 0 33.333%;
 }
-.product-image[data-menu-id='6'] {
+.product-image__photo[data-menu-id='6'] {
 	background-position: 33.333% 33.333%;
 }
-.product-image[data-menu-id='7'] {
+.product-image__photo[data-menu-id='7'] {
 	background-position: 66.667% 33.333%;
 }
-.product-image[data-menu-id='8'] {
+.product-image__photo[data-menu-id='8'] {
 	background-position: 100% 33.333%;
 }
-.product-image[data-menu-id='9'] {
+.product-image__photo[data-menu-id='9'] {
 	background-position: 0 66.667%;
 }
-.product-image[data-menu-id='10'] {
+.product-image__photo[data-menu-id='10'] {
 	background-position: 33.333% 66.667%;
 }
-.product-image[data-menu-id='11'] {
+.product-image__photo[data-menu-id='11'] {
 	background-position: 66.667% 66.667%;
 }
-.product-image[data-menu-id='12'] {
+.product-image__photo[data-menu-id='12'] {
 	background-position: 100% 66.667%;
 }
-.product-image[data-menu-id='13'] {
+.product-image__photo[data-menu-id='13'] {
 	background-position: 0 100%;
 }
-.product-image[data-menu-id='14'] {
+.product-image__photo[data-menu-id='14'] {
 	background-position: 33.333% 100%;
 }
-.product-image[data-menu-id='15'] {
+.product-image__photo[data-menu-id='15'] {
 	background-position: 66.667% 100%;
 }
-.product-image[data-menu-id='16'] {
+.product-image__photo[data-menu-id='16'] {
 	background-position: 100% 100%;
 }
 
@@ -352,7 +351,6 @@ p {
 	flex: 1;
 	max-height: calc(560 * var(--u));
 	border-radius: var(--radius-l);
-	background-size: 400% 400%;
 }
 
 .welcome__title {
@@ -369,17 +367,17 @@ p {
 }
 
 .welcome__choices {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	display: flex;
+	flex-direction: column;
 	gap: calc(16 * var(--u));
 }
 
 .choice-card {
 	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	min-height: calc(320 * var(--u));
-	padding: calc(40 * var(--u));
+	align-items: center;
+	gap: calc(32 * var(--u));
+	min-height: calc(184 * var(--u));
+	padding: calc(32 * var(--u)) calc(40 * var(--u)) calc(32 * var(--u)) calc(32 * var(--u));
 	border: 0;
 	border-radius: var(--radius-l);
 	color: var(--ink);
@@ -388,13 +386,27 @@ p {
 }
 
 .choice-card__icon {
-	font-size: calc(64 * var(--u));
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: calc(120 * var(--u));
+	height: calc(120 * var(--u));
+	border-radius: var(--radius-m);
+	background: var(--ground);
+	font-size: calc(56 * var(--u));
 }
 
 .choice-card__copy {
 	display: flex;
+	flex: 1;
 	flex-direction: column;
 	gap: calc(8 * var(--u));
+}
+
+.choice-card__arrow {
+	color: var(--muted);
+	font-size: calc(40 * var(--u));
 }
 
 .choice-card__title {
@@ -408,11 +420,6 @@ p {
 .choice-card__note {
 	color: var(--muted);
 	font-size: calc(26 * var(--u));
-}
-
-.welcome__footer {
-	color: var(--dark-muted);
-	font-size: calc(22 * var(--u));
 }
 
 /* Hlavička a katalog */
@@ -707,10 +714,6 @@ p {
 	font-weight: 700;
 	letter-spacing: -0.03em;
 	line-height: 1;
-}
-
-.order-bar__button:disabled .count-badge {
-	color: var(--muted);
 }
 
 /* Detail produktu jako spodní panel */
