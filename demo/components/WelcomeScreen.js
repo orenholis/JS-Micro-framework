@@ -1,13 +1,14 @@
-import { Component, button, div, footer, h1, header, main, p, section, span, tag } from '../../src/index.js';
+import { Component, button, div, h1, header, main, p, section, span, tag } from '../../src/index.js';
 import { icon, productImage } from '../ui.js';
 
 function choice(iconName, title, note, onSelect) {
 	return button(
-		icon(iconName, 'choice-card__icon'),
+		span(icon(iconName)).class('choice-card__icon'),
 		span(
 			span(title).class('choice-card__title'),
 			span(note).class('choice-card__note'),
 		).class('choice-card__copy'),
+		icon('forward', 'choice-card__arrow'),
 	)
 		.class('choice-card')
 		.prop('type', 'button')
@@ -32,7 +33,6 @@ export class WelcomeScreen extends Component {
 				.class('welcome__choices')
 				.attr('role', 'group')
 				.aria('label', 'Způsob konzumace'),
-			footer(span('Platba kartou, telefonem i hotově')).class('welcome__footer'),
 		)
 			.class('screen', 'welcome')
 			.aria('labelledby', 'welcome-title');

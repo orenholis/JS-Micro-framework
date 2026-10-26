@@ -14,16 +14,9 @@ export class OrderBar extends Component {
 				span(label).class('order-bar__label'),
 				strong(summary.map((current) => money(current.total))).class('order-bar__total'),
 			).class('order-bar__summary'),
-			button(
-				span('Zobrazit objednávku'),
-				span(summary.map((current) => current.count))
-					.class('count-badge')
-					.aria('hidden', 'true')
-					.prop('hidden', summary.map((current) => current.count === 0)),
-			)
+			button('Zobrazit objednávku')
 				.class('primary-button', 'order-bar__button')
 				.prop('type', 'button')
-				.aria('label', 'Zobrazit objednávku')
 				.prop('disabled', summary.map((current) => current.count === 0))
 				.on('click', onOpen),
 		).class('order-bar');
