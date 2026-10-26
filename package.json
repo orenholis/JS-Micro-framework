@@ -1,8 +1,28 @@
 {
-  "name": "constrained-ui-framework-demo",
+  "name": "js-micro-framework",
   "version": "0.1.0",
   "private": true,
+  "description": "Lehký JavaScriptový framework pro výkonově omezená zařízení (bakalářská práce) a demonstrační samoobslužný kiosek.",
+  "license": "MIT",
+  "author": "Oren Holiš",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orenholis/JS-Micro-framework.git"
+  },
+  "keywords": [
+    "framework",
+    "ui",
+    "signals",
+    "kiosk",
+    "no-build",
+    "es-modules"
+  ],
   "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./svg": "./src/svg.js"
+  },
   "scripts": {
     "build": "node tools/build.mjs",
     "format": "prettier \"{demo,tests}/**/*.{css,html}\" --write && eslint . --fix",

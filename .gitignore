@@ -137,3 +137,9 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Kiosk demo database and editor files
+.data/
+.DS_Store
+.idea/
+*.iml

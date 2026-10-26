@@ -4,6 +4,27 @@ V0 je funkční implementace návrhu z bakalářské práce. Framework použív�
 standardní ES moduly a Web API, nemá běhové závislosti a ke spuštění aplikace
 nevyžaduje build. Produkční build slouží pouze k vytvoření menší distribuce.
 
+## Rychlý start
+
+Vyžaduje Node.js 22.13 nebo novější (viz `.nvmrc`).
+
+```text
+npm install
+npm run serve      # kiosk na http://127.0.0.1:4173/demo/
+npm test           # testy frameworku, kiosku a serveru
+npm run verify     # lint, testy, produkční build a kontrola velikosti
+```
+
+## Struktura repozitáře
+
+| Složka | Obsah |
+| --- | --- |
+| `src/` | framework: komponenty, signály, šablony, kolekce, volitelné SVG |
+| `demo/` | demonstrační samoobslužný kiosek postavený na frameworku |
+| `server/` | demonstrační server s SQLite (katalog a objednávky) |
+| `tests/` | testy v Node.js a prohlížečové testy (`/tests/`) |
+| `tools/` | build, měření velikosti a spuštění serveru |
+
 ## Zápis komponent
 
 HTML elementy představují funkce a jejich nastavení se řetězí. Potomci se
@@ -147,7 +168,7 @@ npm run serve
 
 Server vyžaduje Node.js 22.13 nebo novější, protože pro demonstrační data
 používá vestavěný modul SQLite. Při prvním spuštění automaticky vytvoří
-`framework/.data/kiosk.sqlite`, aplikuje schéma a vloží opakovatelnou sadu
+`.data/kiosk.sqlite`, aplikuje schéma a vloží opakovatelnou sadu
 kategorií a produktů. Tento vygenerovaný soubor není součástí repozitáře.
 
 Demonstrační aplikace používá vlastní značku BITE a realistický katalog se
@@ -231,3 +252,7 @@ V0 záměrně neobsahuje router, globální úložiště, SSR, hydrataci ani vla
 datovou vrstvu. Seznam zatím neoptimalizuje počet přesunů pomocí longest
 increasing subsequence a události používají přímé listenery namísto delegace.
 Tyto body nejsou součástí požadavků na jádro práce.
+
+## Licence
+
+MIT, viz [LICENSE](LICENSE).
